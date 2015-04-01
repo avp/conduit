@@ -39,6 +39,7 @@
     <h2>Proposal</h2>
 
     <h3>Summary</h3>
+
     <p>
       Conduit is a project to reduce bandwidth requirements for streaming live 4K panoramic video to a HMD (head-mounted display, e.g. Oculus Rift). To do this, we will take advantage of the fact that the human eye has a much higher resolution in the center than in the outside, and transcode video on the outer part of your vision at a lower quality. Our goal is to do this with minimal latency, and maximum stream-per-system performance.
     </p>
@@ -46,51 +47,94 @@
     <h3>Background</h3>
     <!-- TODO: I've added a few details, but there's definitely more to say -Greg -->
     <!-- TODO: These are the words to use, but we might want to add some formatting -->
+
+    <h4>Definitions</h4>
+
     <p>
-      Definitions:
+      <strong>Source video:</strong>
+      The original raw 4K panoramic video stream we want to make available through HMDs.
+    </p>
 
-      Source video: The original raw 4K panoramic video stream we want to make avaialble through HMDs.
+    <p>
+      <strong>View-optimized video:</strong>
+      The source video, cropped to show just the parts the user is looking at (plus some padding if they move).
+      This is optimized to display lower quality video to lower resolution parts of the human eye.
+    </p>
 
-      View-optimized video: The source video, cropped to show just the parts the user is looking at (plus some padding if they move), and optimized to display lower quality video to lower resolution parts of the human eye.
+    <p>
+      <strong>HMD video:</strong>
+      The video cropped to just the part the HMD is looking at, re-projected for both eyes, and formatted via barrel distortion for the Oculus.
+    </p>
 
-      HMD video: The video cropped to just the part the HMD is looking at, re-projected for both eyes, and formatted via barrel distortion for the Oculus.
+    <p>
+      <strong>Client:</strong>
+      A personal computer or phone receiving the video stream,
+      and performing some processing on the stream.
+    </p>
 
-      Client: A personal computer or phone receiving the video stream, and performing
+    <h4>Project</h4>
 
+    <p>
       This project revolves around the idea of a bandwidth-latency tradeoff, a challenge in parallelizing programs. We spend extra time processing the video to make it smaller, in order to reduce bandwidth requirements.
+    </p>
 
-      The naive approach to getting streaming VR video would be to stream the entire 4K source video, and process it on the client. However, Netflix recommends an Internet connection speed of 25Mbps for streaming a 4K video (https://help.netflix.com/en/node/13444). According to Akamai, the average American internet speed is about 10 Mbps. In addition, while 4G internet can get almost to the 4K streaming point, at 20Mbps down (https://bgr.com/2013/03/11/4g-network-speeds-368339/), on average it's a lot lower. Of course, mobile networks aren't built to handle <emph>everyone</emph> using that much data all the time.
+    <p>
+      The naive approach to getting streaming VR video would be to stream the entire 4K source video, and process it on the client.
+      However, <a href="https://help.netflix.com/en/node/13444">Netflix recommends</a>
+      an Internet connection speed of 25 Mbps for streaming a 4K video.
+      According to Akamai, the average American internet speed is about 10 Mbps.
+      In addition, while 4G internet can get almost to the 4K streaming point,
+      <a
+        href="https://bgr.com/2013/03/11/4g-network-speeds-368339/">at 20 Mbps down</a>, on average it's a lot lower.
+      Of course, mobile networks aren't built to handle
+      <i>everyone</i> using that much data all the time.
+    </p>
 
-      If this technique is successful (and fully realizing it goes well beyond the scope of this project), it may make it practical to attend events live performances and events like concerts and sports games in VR, even from a mobile device, by reducing the bandwidth requirement.
+    <p>
+      If this technique is successful (and fully realizing it goes well beyond the scope of this project),
+      it may make it practical to attend events live performances and events like concerts and sports games in VR,
+      even from a mobile device, by reducing the bandwidth requirement.
     </p>
 
     <h3>Challenge</h3>
+
     <p>
       There are many challenges to this project. First, neither of us have worked with developing low-level code for VR, or video streaming and video codecs.
     </p>
 
-      <h4>Workload</h4>
-      <!-- Still not sure at all on this -->
-      <p>
-        In terms of dependencies, within a single frame, things are mostly independent, but across frames, if we make a change to one frame, the next one needs to be somewhat consistent with it. This'll matter if we try to go out of order.
-      </p>
+    <h4>Workload</h4>
+    <!-- Still not sure at all on this -->
+    <p>
+      In terms of dependencies, within a single frame, things are mostly independent,
+      but across frames, if we make a change to one frame, the next one needs to be somewhat consistent with it.
+      This will matter if we try to go out of order.
+    </p>
 
-      <p>
-        We'll use both a lot of bandwidth, and a lot of compute, as 4K video contains a lot of data, and video compression does a lot of work with that data. On the client side, it is fundamentally a rendering problem, which can be done well in parallel.
-      </p>
+    <p>
+      We'll use both a lot of bandwidth, and a lot of compute, as 4K video contains a lot of data, and video compression does a lot of work with that data.
+      On the client side, it is fundamentally a rendering problem, which can be done well in parallel.
+    </p>
 
-      <h4>Constraints</h4>
-      <p>
-        During the video processing phase, the areas of the video we'll be compressing will be varying, and often strangely segmented. In other words, they won't be nice rectangles, but irregular shapes that overlap, causing a lot of false sharing with the cache.
-      </p>
+    <h4>Constraints</h4>
+
+    <p>
+      During the video processing phase, the areas of the video we'll be compressing will be varying, and often strangely segmented.
+      In other words, they won't be nice rectangles, but irregular shapes that overlap, causing a lot of false sharing with the cache.
+    </p>
 
     <h3>Resources</h3>
-    We'll start from scratch, but ultimately probably need to use video compression libraries. We'll use the Oculus SDK. Oculus also has C++ example code for a scene in case we get stuck.
+
+    <p>
+      We'll start from scratch, but ultimately probably need to use video compression libraries.
+      We'll use the Oculus SDK. Oculus also has C++ example code for a scene in case we get stuck.
+    </p>
 
     <h3>Goals &amp; Deliverables</h3>
-    Goals:
-    1) Render the panoramic video to the Oculus
-    2) View-optmize it
+
+    <ol>
+      <li>Render the panoramic video to the Oculus</li>
+      <li>View optimize the stream</li>
+    </ol>
 
     <h3>Platform Choice</h3>
 
