@@ -98,15 +98,17 @@
     <h3>Challenge</h3>
 
     <p>
-      There are many challenges to this project. First, neither of us have worked with developing low-level code for VR, or video streaming and video codecs.
+      There are many challenges to this project. First, neither of us have worked with developing low-level code for VR, or video streaming and video codecs. So we'll have to learn how to do that, and how to process streaming video in parallel.
+
+      Additionally, at its core, we're exploring the challenge of a bandwidth-latency tradeoff, which is a real issue in developing parallel programs.
+
+      The challenge is highly scalable, in that if we are able to finish all of our goals early, there are many different ways to optimize the video.
     </p>
 
     <h4>Workload</h4>
-    <!-- Still not sure at all on this -->
     <p>
-      In terms of dependencies, within a single frame, things are mostly independent,
-      but across frames, if we make a change to one frame, the next one needs to be somewhat consistent with it.
-      This will matter if we try to go out of order.
+      In terms of dependencies, within a single frame, pixels in the rendering. However, in a blur filter, a pixel's new value depends on the surrounding ones.
+      We're mostly depending on getting HMD data, and also depending on the streaming video to come in.
     </p>
 
     <p>
@@ -117,8 +119,8 @@
     <h4>Constraints</h4>
 
     <p>
-      During the video processing phase, the areas of the video we'll be compressing will be varying, and often strangely segmented.
-      In other words, they won't be nice rectangles, but irregular shapes that overlap, causing a lot of false sharing with the cache.
+      During the video processing phase, we don't split the video into nice rectangular partitions, but irregular shapes that overlap, and possibly cause false sharing.
+      The largest constraint is the performance requirement that we need to have very low latency to be comfortable for people to use.
     </p>
 
     <h3>Resources</h3>
@@ -212,6 +214,7 @@
     <p>
       <strong>Week 5:</strong>
       Prepare for presentation and final improvements, bug fixes, and tuning.
+      Prepare final writeup.
     </p>
   </section>
 </div>
