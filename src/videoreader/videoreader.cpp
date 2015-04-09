@@ -9,6 +9,7 @@ VideoReader::VideoReader(std::string filename) {
     std::exit(1);
   }
   cv::namedWindow(WINDOW_NAME, CV_WINDOW_AUTOSIZE);
+  framesCaptured = 0;
 }
 
 cv::Mat VideoReader::getFrame() {
@@ -18,11 +19,21 @@ cv::Mat VideoReader::getFrame() {
 }
 
 bool VideoReader::showFrame() {
+  double start = Timer::time();
+
   cv::Mat frame = getFrame();
   if (frame.empty()) {
     std::cout << "No frames left to show." << std::endl;
     return false;
   }
+
+  double end = Timer::time();
+  double fps = 1.0 / ((end - start) / 1000.0);
+  avgFps = ((avgFps * (double) framesCaptured) + fps) /
+    ((double) framesCaptured + 1.0);
+  std::cout << avgFps << " Average FPS" << std::endl;
+  framesCaptured++;
+
   cv::imshow(WINDOW_NAME, frame);
   return true;
 }
