@@ -1,5 +1,5 @@
 # Project setup
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 project(conduit)
 
 # Flags
@@ -18,20 +18,37 @@ find_package(OpenCV REQUIRED)
 # OpenGL
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
+find_package(GLEW REQUIRED)
+
+# SDL2
+include(FindPkgConfig)
+pkg_search_module(SDL2 REQUIRED sdl2)
+include_directories(${SDL2_INCLUDE_DIRS})
+
+# Oculus
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+find_package(Oculus REQUIRED)
 
 # Compile each part
 cuda_compile(BUILDTEST buildtest/buildtest.cu)
 set(VIDEOREADER videoreader/videoreader.cpp)
+set(RENDERER renderer/renderer.cpp)
 
 # Final executable
 add_executable(conduit main.cpp
   ${BUILDTEST}
   ${VIDEOREADER}
+  ${RENDERER}
   )
 
 target_link_libraries(conduit
   ${OPENGL_LIBRARIES}
   ${GLUT_LIBRARY}
+  ${GLEW_LIBRARIES}
+  ${SDL2_LIBRARIES}
   ${OpenCV_LIBS}
   ${CUDA_LIBRARIES}
+  ${Oculus_LIBRARIES}
   )
+
+target_compile_features(conduit PRIVATE cxx_range_for)
