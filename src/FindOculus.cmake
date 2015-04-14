@@ -9,7 +9,9 @@ FIND_PATH(
   NAMES OVR_CAPI.h
   PATHS
   ${CMAKE_SOURCE_DIR}/../LibOVR/Include
+  ${CMAKE_SOURCE_DIR}/../../LibOVR/Include
   ${CMAKE_SOURCE_DIR}/../OculusSDK/LibOVR/Include
+  ${CMAKE_SOURCE_DIR}/../../OculusSDK/LibOVR/Include
   /usr/include/LibOVR/Include
   /usr/local/include/LibOVR/Include
   /opt/local/include/LibOVR/Include
@@ -22,7 +24,7 @@ FIND_LIBRARY(
   Oculus_LIBRARIES
   NAMES LibOVR OVR
   PATHS
-  ${CMAKE_SOURCE_DIR}/../LibOVR/Lib/MacOS/Release
+  ${CMAKE_SOURCE_DIR}/../LibOVR/Lib/Mac/Release
   ${CMAKE_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/x86_64/Release
   ${CMAKE_SOURCE_DIR}/../../LibOVR/Lib/Mac/Release
   /usr/include/LibOVR/Lib
