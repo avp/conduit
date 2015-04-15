@@ -1,14 +1,21 @@
 #ifndef RENDERER_RENDERER_H_
 #define RENDERER_RENDERER_H_
 
+#include <iostream>
+#include <unistd.h>
+
 #include <GL/glew.h>
+#include <GL/gl.h>
+#include <GL/glut.h>
+#include <glm/glm.hpp>
+
 #include <OVR_CAPI_0_5_0.h>
 #include <OVR_CAPI_GL.h>
+
 #include <SDL2/SDL.h>
-#include <glm/glm.hpp>
-#include <iostream>
 #include <opencv2/highgui/highgui.hpp>
-#include <unistd.h>
+
+#include "../util/imageutil.hpp"
 
 #ifdef WIN32
 #define OVR_OS_WIN32
@@ -26,6 +33,7 @@
 class Renderer {
   public:
     Renderer(int w, int h);
+    static void displayStereoImage(const cv::Mat& image);
 
   private:
     SDL_Window* win;
@@ -38,13 +46,16 @@ class Renderer {
     ovrGLTexture ovrTex[2];
     ovrGLTexture* prTargetTex;
 
+    GLuint texture[2];
+
     int windowWidth, windowHeight;
     int fovTexWidth, fovTexHeight;
     unsigned int fbo, fovTex, fovDepth;
     ovrGLConfig glCfg;
     unsigned int distortCaps, hmdCaps;
 
-    unsigned int nextPow2(unsigned int x);
+    static GLuint loadTexture(const cv::Mat& image);
+    static unsigned int nextPow2(unsigned int x);
 };
 
 #endif

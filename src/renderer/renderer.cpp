@@ -100,23 +100,129 @@ Renderer::Renderer(int w, int h) {
   hmdCaps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
   ovrHmd_SetEnabledCaps(hmd, hmdCaps);
 
-  cout << "Configuring distortion rendering..." << endl;
-  distortCaps = ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive;
-  if (!ovrHmd_ConfigureRendering(hmd, &glCfg.Config, distortCaps,
-        hmd->DefaultEyeFov, eyeDesc)) {
-    cerr << "Failed to configure distortion rendering." << endl;
-    exit(1);
-  }
-  cout << "Configured distortion rendering." << endl;
+  // cout << "Configuring distortion rendering..." << endl;
+  // distortCaps = ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive;
+  // if (!ovrHmd_ConfigureRendering(hmd, &glCfg.Config, distortCaps,
+  //       hmd->DefaultEyeFov, eyeDesc)) {
+  //   cerr << "Failed to configure distortion rendering." << endl;
+  //   exit(1);
+  // }
+  // cout << "Configured distortion rendering." << endl;
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glEnable(GL_LIGHT1);
   glEnable(GL_NORMALIZE);
 
   glClearColor(0.1, 0.1, 0.1, 1);
+}
+
+GLuint Renderer::loadTexture(const cv::Mat& image) {
+  int height = image.rows;
+  int width = image.cols;
+
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+  // build our texture
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
+      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return texture;
+}
+
+void display() {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glTranslatef(0.0f, 0.0f, -5.0f);
+
+  glLoadIdentity();
+
+  glBegin(GL_QUADS);
+  glColor3ub(255, 0, 0);
+  glVertex2f(10, 10);
+  glVertex2f(400, 10);
+  glVertex2f(400, 400);
+  glVertex2f(10, 400);
+  glEnd();
+
+  glFlush();
+}
+
+void Renderer::displayStereoImage(const cv::Mat& image) {
+  int width = image.cols;
+  int height = image.rows / 2;
+
+  std::cout << "Taking image of " << width << " x " << height << std::endl;
+
+  cv::Mat images[2];
+  GLuint textures[2];
+
+  // glClearColor(0, 0, 0, 0);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_BLEND);
+
+  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+  glutInitWindowSize(1024, 768);
+  glutCreateWindow("Main Window");
+
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  glOrtho(0.0, width-1, height-1, 0, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+
+  glEnable(GL_TEXTURE_2D);
+  for (int i = 0; i < 1; i++) {
+    images[i] = cv::Mat(image, cv::Range(height * i, height));
+    textures[i] = loadTexture(images[i]);
+
+    // Bind the texture so it gets used
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
+
+    // Draw and texture the rectangle
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(0.0, 0.0);
+    glVertex3f(0, 0, 0);
+
+    glTexCoord2f(0.0, 1.0);
+    glVertex3f(0, height, 0);
+
+    glTexCoord2f(1.0, 1.0);
+    glVertex3f(width, height, 0);
+
+    glTexCoord2f(1.0, 0.0);
+    glVertex3f(width, 0, 0);
+
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+
+  glDisable(GL_TEXTURE_2D);
+
+  glPopMatrix();
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+
+  glFlush();
+
+  cv::Mat left(640, 1024, CV_8UC3);
+  ImageUtil::glPixelsToMat(left);
+
+  cv::namedWindow("left", CV_WINDOW_AUTOSIZE);
+  imshow("left", left);
+  cv::waitKey(5000);
 }
 
 unsigned int Renderer::nextPow2(unsigned int x) {

@@ -34,12 +34,14 @@ include_directories(${Oculus_INCLUDE_DIRS})
 cuda_compile(BUILDTEST buildtest/buildtest.cu)
 set(VIDEOREADER videoreader/videoreader.cpp)
 set(RENDERER renderer/renderer.cpp)
+set(UTIL util/imageutil.cpp)
 
 # Final executable
 add_executable(conduit main.cpp
   ${BUILDTEST}
   ${VIDEOREADER}
   ${RENDERER}
+  ${UTIL}
   )
 
 target_link_libraries(conduit

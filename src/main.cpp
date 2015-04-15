@@ -31,6 +31,23 @@ static int playVideo(int argc, char* argv[]) {
   return 0;
 }
 
+static int renderStereo(int argc, char* argv[]) {
+  if (argc < 3) {
+    std::cerr << "Usage: "
+      << argv[0]
+      << " render filename"
+      << std::endl;
+    return 1;
+  }
+  std::string filename = argv[2];
+  VideoReader videoReader(filename);
+  cv::Mat image = videoReader.getFrame();
+  glutInit(&argc, argv);
+  // Renderer renderer(1024, 640);
+  Renderer::displayStereoImage(image);
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     usage();
@@ -43,8 +60,7 @@ int main(int argc, char* argv[]) {
   } else if (runMode == "playvideo") {
     return playVideo(argc, argv);
   } else if (runMode == "render") {
-    Renderer renderer(1024, 640);
-    return 0;
+    return renderStereo(argc, argv);
   } else {
     usage();
   }

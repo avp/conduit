@@ -8,8 +8,8 @@ VideoReader::VideoReader(std::string filename) {
     std::cerr << "Failed to open file " << filename << std::endl;
     std::exit(1);
   }
-  cv::namedWindow(WINDOW_NAME, CV_WINDOW_AUTOSIZE);
   framesCaptured = 0;
+  windowCreated = false;
 }
 
 cv::Mat VideoReader::getFrame() {
@@ -19,6 +19,11 @@ cv::Mat VideoReader::getFrame() {
 }
 
 bool VideoReader::showFrame() {
+  if (!windowCreated) {
+    cv::namedWindow(WINDOW_NAME, CV_WINDOW_AUTOSIZE);
+    windowCreated = true;
+  }
+
   double start = Timer::time();
 
   cv::Mat frame = getFrame();

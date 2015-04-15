@@ -17,6 +17,7 @@ class VideoReader {
   private:
     cv::VideoCapture videoCapture;
     int framesCaptured;
+    bool windowCreated;
     double avgFps;
 };
 
