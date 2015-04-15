@@ -160,35 +160,35 @@ void Renderer::displayStereoImage(const cv::Mat& image) {
   int width = image.cols;
   int height = image.rows / 2;
 
-  std::cout << "Taking image of " << width << " x " << height << std::endl;
-
   cv::Mat images[2];
+  cv::Mat results[2];
   GLuint textures[2];
 
-  // glClearColor(0, 0, 0, 0);
   glDisable(GL_LIGHTING);
   glDisable(GL_BLEND);
 
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-  glutInitWindowSize(1024, 768);
-  glutCreateWindow("Main Window");
+  glutInitWindowSize(width, height);
+  glutCreateWindow("GL Window");
 
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  glOrtho(0.0, width-1, height-1, 0, -1.0, 1.0);
+  glOrtho(0.0, width - 1, height - 1, 0, -1.0, 1.0);
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
 
   glEnable(GL_TEXTURE_2D);
-  for (int i = 0; i < 1; i++) {
-    images[i] = cv::Mat(image, cv::Range(height * i, height));
+
+  for (int i = 0; i < 2; i++) {
+    images[i] = cv::Mat(image, cv::Range(height * i, height * (i + 1)));
     textures[i] = loadTexture(images[i]);
 
     // Bind the texture so it gets used
     glBindTexture(GL_TEXTURE_2D, textures[i]);
 
     // Draw and texture the rectangle
+    glClearColor(0, 0, 0, 0);
     glBegin(GL_QUADS);
 
     glTexCoord2f(0.0, 0.0);
@@ -206,6 +206,11 @@ void Renderer::displayStereoImage(const cv::Mat& image) {
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    glFlush();
+
+    results[i] = cv::Mat(height, width, CV_8UC3);
+    std::cout << width << "x" << height << std::endl;
+    ImageUtil::glPixelsToMat(results[i]);
   }
 
   glDisable(GL_TEXTURE_2D);
@@ -215,13 +220,9 @@ void Renderer::displayStereoImage(const cv::Mat& image) {
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
 
-  glFlush();
+  cv::namedWindow("right", CV_WINDOW_NORMAL);
+  imshow("right", results[1]);
 
-  cv::Mat left(640, 1024, CV_8UC3);
-  ImageUtil::glPixelsToMat(left);
-
-  cv::namedWindow("left", CV_WINDOW_AUTOSIZE);
-  imshow("left", left);
   cv::waitKey(5000);
 }
 

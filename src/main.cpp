@@ -43,8 +43,8 @@ static int renderStereo(int argc, char* argv[]) {
   VideoReader videoReader(filename);
   cv::Mat image = videoReader.getFrame();
   glutInit(&argc, argv);
-  // Renderer renderer(1024, 640);
-  Renderer::displayStereoImage(image);
+  Renderer renderer(1024, 640);
+  renderer.displayStereoImage(image);
   return 0;
 }
 

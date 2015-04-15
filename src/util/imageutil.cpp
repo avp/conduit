@@ -7,10 +7,9 @@ void ImageUtil::glPixelsToMat(cv::Mat& image) {
   glPixelStorei(GL_PACK_ALIGNMENT, (image.step & 3) ? 1 : 4);
   glPixelStorei(GL_PACK_ROW_LENGTH, image.step / image.elemSize());
 
-  glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, image.data);
+  glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
 
   cv::Mat flipped;
   cv::flip(image, flipped, 0);
-
   image = flipped;
 }

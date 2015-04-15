@@ -33,7 +33,7 @@
 class Renderer {
   public:
     Renderer(int w, int h);
-    static void displayStereoImage(const cv::Mat& image);
+    void displayStereoImage(const cv::Mat& image);
 
   private:
     SDL_Window* win;
@@ -54,7 +54,7 @@ class Renderer {
     ovrGLConfig glCfg;
     unsigned int distortCaps, hmdCaps;
 
-    static GLuint loadTexture(const cv::Mat& image);
+    GLuint loadTexture(const cv::Mat& image);
     static unsigned int nextPow2(unsigned int x);
 };
 
