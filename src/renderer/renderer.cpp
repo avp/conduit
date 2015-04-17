@@ -156,6 +156,10 @@ void display() {
   glFlush();
 }
 
+void dummy() {
+  std::cout << "Redisplay\n";
+}
+
 void Renderer::displayStereoImage(const cv::Mat& image) {
   int width = image.cols;
   int height = image.rows / 2;
@@ -170,6 +174,7 @@ void Renderer::displayStereoImage(const cv::Mat& image) {
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
   glutInitWindowSize(width, height);
   glutCreateWindow("GL Window");
+  glutDisplayFunc(dummy);
 
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
