@@ -5,8 +5,15 @@
 #include <unistd.h>
 
 #include <GL/glew.h>
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/gl.h>
 #include <GL/glut.h>
+#endif
+
 #include <glm/glm.hpp>
 
 #include <OVR_CAPI_0_5_0.h>

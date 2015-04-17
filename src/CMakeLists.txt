@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(conduit)
 
 # Flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g")
 
 # Options for output
 set(CMAKE_COLOR_MAKEFILE on)
