@@ -34,7 +34,7 @@ include_directories(${Oculus_INCLUDE_DIRS})
 cuda_compile(BUILDTEST buildtest/buildtest.cu)
 set(VIDEOREADER videoreader/videoreader.cpp)
 set(RENDERER renderer/renderer.cpp)
-set(UTIL util/imageutil.cpp)
+set(UTIL util/imageutil.cpp util/cylinderwarp.cpp)
 
 # Final executable
 add_executable(conduit main.cpp

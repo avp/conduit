@@ -17,7 +17,6 @@
 
 class ImageUtil {
   public:
-    ImageUtil();
     static void glPixelsToMat(cv::Mat& image);
 };
 
