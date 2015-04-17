@@ -15,6 +15,12 @@ VideoReader::VideoReader(std::string filename) {
 cv::Mat VideoReader::getFrame() {
   cv::Mat frame;
   videoCapture >> frame;
+  if (framesCaptured == 0 && frame.empty()) {
+    videoCapture >> frame;
+  }
+  if (!frame.empty()) {
+    framesCaptured++;
+  }
   return frame;
 }
 
@@ -37,7 +43,6 @@ bool VideoReader::showFrame() {
   avgFps = ((avgFps * (double) framesCaptured) + fps) /
     ((double) framesCaptured + 1.0);
   std::cout << avgFps << " Average FPS" << std::endl;
-  framesCaptured++;
 
   cv::imshow(WINDOW_NAME, frame);
   return true;
