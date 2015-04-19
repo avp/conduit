@@ -41,7 +41,21 @@
     <h3>Work Completed</h3>
 
     <p>
-      <!-- TODO One to two paragraphs, summarize the work that you have completed so far. -->
+      We're currently working on getting our renderer working.
+      First, we set up our build system with CMake so that it'll work on multiple operating systems easily.
+      We installed OpenCV, OpenGL, CUDA, and related libraries.
+      We found some <a href="http://photocreations.ca/3D/">high resolution panoramic video</a>,
+      and we used OpenCV to read it in frame by frame.
+      We were able to simply render that same frame (reading it from a hard disk), at about 30 FPS.
+      The next step, which we are currently working on, is being able to warp the images into cylinder shape.
+      Panoramas are distorted, and we need to reverse that to work on them.
+    </p>
+
+    <p>
+      We also got OpenGL working, so that we are able to load images as OpenGL textures.
+      This allows us to map them onto OpenGL quads for rendering to the Oculus.
+      Right now, we map the images directly onto a single OpenGL quad,
+      and we can read the raw pixel data back directly from that and get a <code>cv::Mat</code> image back.
     </p>
 
     <h3>Plans</h3>
