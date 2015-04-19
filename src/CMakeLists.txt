@@ -35,9 +35,11 @@ cuda_compile(BUILDTEST buildtest/buildtest.cu)
 set(VIDEOREADER videoreader/videoreader.cpp)
 set(RENDERER renderer/renderer.cpp)
 set(UTIL util/imageutil.cpp util/cylinderwarp.cpp)
+set(RENDERTEST rendertest/rendertest.cpp)
 
 # Final executable
 add_executable(conduit main.cpp
+  ${RENDERTEST}
   ${BUILDTEST}
   ${VIDEOREADER}
   ${RENDERER}

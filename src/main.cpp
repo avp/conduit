@@ -4,6 +4,7 @@
 #include "buildtest/buildtest.hpp"
 #include "videoreader/videoreader.hpp"
 #include "renderer/renderer.hpp"
+#include "rendertest/rendertest.hpp"
 #include "util/cylinderwarp.hpp"
 
 static void usage() {
@@ -70,6 +71,10 @@ static int renderStereo(int argc, char* argv[]) {
   return 0;
 }
 
+static int renderTest(int argc, char* argv[]) {
+  return RenderTest::renderTest(argc, argv);
+}
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     usage();
@@ -85,6 +90,8 @@ int main(int argc, char* argv[]) {
     return cylinderWarp(argc, argv);
   } else if (runMode == "render") {
     return renderStereo(argc, argv);
+  } else if (runMode == "rendertest") {
+    return renderTest(argc, argv);
   } else {
     usage();
   }
