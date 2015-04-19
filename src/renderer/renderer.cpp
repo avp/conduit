@@ -1,10 +1,12 @@
 #include "renderer.hpp"
 
-Renderer::Renderer(int w, int h) {
-  using std::cout;
-  using std::cerr;
-  using std::endl;
+using std::cout;
+using std::cerr;
+using std::endl;
 
+// Oculus rendering based on http://nuclear.mutantstargoat.com/hg/oculus2/file/tip/src/main.c
+
+Renderer::Renderer(int w, int h) {
   cout << "Initializing OVR..." << endl;
   ovr_Initialize(0);
 
@@ -51,35 +53,44 @@ Renderer::Renderer(int w, int h) {
   SDL_SetWindowSize(win, windowWidth, windowHeight);
   SDL_SetWindowPosition(win, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-  ovrHmd_ConfigureTracking(hmd,
-      ovrTrackingCap_Orientation |
-      ovrTrackingCap_MagYawCorrection |
-      ovrTrackingCap_Position,
-      0);
+  /* enable position and rotation tracking */
+  ovrHmd_ConfigureTracking(
+    hmd,
+    ovrTrackingCap_Orientation |
+    ovrTrackingCap_MagYawCorrection |
+    ovrTrackingCap_Position,
+    0
+  );
 
+  /* retrieve the optimal render target resolution for each eye */
   eyeRes[0] = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,
       hmd->DefaultEyeFov[0], 1.0);
   eyeRes[1] = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right,
       hmd->DefaultEyeFov[1], 1.0);
 
+  /* and create a single render target texture to encompass both eyes */
   fovSize.w = eyeRes[0].w + eyeRes[1].w;
   fovSize.h = std::max(eyeRes[0].h, eyeRes[1].h);
+  fbTexWidth = nextPow2(fovSize.w);
+  fbTexHeight = nextPow2(fovSize.h);
+  updateRenderTarget();
 
-  fovTexWidth = nextPow2(fovSize.w);
-  fovTexHeight = nextPow2(fovSize.h);
-
+  /* fill in the ovrGLTexture structures that describe our render target texture */
   for (int i = 0; i < 2; i++) {
     ovrTex[i].OGL.Header.API = ovrRenderAPI_OpenGL;
-    ovrTex[i].OGL.Header.TextureSize.w = fovTexWidth;
-    ovrTex[i].OGL.Header.TextureSize.h = fovTexHeight;
+    ovrTex[i].OGL.Header.TextureSize.w = fbTexWidth;
+    ovrTex[i].OGL.Header.TextureSize.h = fbTexHeight;
     /* this next field is the only one that differs between the two eyes */
     ovrTex[i].OGL.Header.RenderViewport.Pos.x = i == 0 ? 0 : fovSize.w / 2.0;
     ovrTex[i].OGL.Header.RenderViewport.Pos.y = 0;
     ovrTex[i].OGL.Header.RenderViewport.Size.w = fovSize.w / 2.0;
     ovrTex[i].OGL.Header.RenderViewport.Size.h = fovSize.h;
-    ovrTex[i].OGL.TexId = fovTex; /* both eyes will use the same texture id */
+    ovrTex[i].OGL.TexId = fbTex; /* both eyes will use the same texture id */
   }
 
+  /* fill in the ovrGLConfig structure needed by the SDK to draw our stereo pair
+   * to the actual HMD display (SDK-distortion mode)
+   */
   memset(&glCfg, 0, sizeof(glCfg));
   glCfg.OGL.Header.API = ovrRenderAPI_OpenGL;
   glCfg.OGL.Header.BackBufferSize = hmd->Resolution;
@@ -114,6 +125,44 @@ Renderer::Renderer(int w, int h) {
   glEnable(GL_NORMALIZE);
 
   glClearColor(0.1, 0.1, 0.1, 1);
+}
+
+/* updateRenderTarget creates (and/or resizes) the render target used to draw the two stero views */
+void Renderer::updateRenderTarget()
+{
+  if(!fbo) {
+    /* if fbo does not exist, then nothing does... create every opengl object */
+    glGenFramebuffers(1, &fbo);
+    glGenTextures(1, &fbTex);
+    glGenRenderbuffers(1, &fbDepth);
+
+    glBindTexture(GL_TEXTURE_2D, fbTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  /* we use the next power of two in both dimensions and use that as a texture size,
+    calculated previously as fbTexWidth and fbTexHeight */
+
+  /* create and attach the texture that will be used as a color buffer */
+  glBindTexture(GL_TEXTURE_2D, fbTex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fbTexWidth, fbTexHeight, 0,
+      GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbTex, 0);
+
+  /* create and attach the renderbuffer that will serve as our z-buffer */
+  glBindRenderbuffer(GL_RENDERBUFFER, fbDepth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fbTexWidth, fbTexHeight);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbDepth);
+
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    fprintf(stderr, "incomplete framebuffer!\n");
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  printf("created render target: %dx%d (texture size: %dx%d)\n", fovSize.w, fovSize.h, fbTexWidth, fbTexHeight);
 }
 
 GLuint Renderer::loadTexture(const cv::Mat& image) {
@@ -225,10 +274,10 @@ void Renderer::displayStereoImage(const cv::Mat& image) {
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
 
-  cv::namedWindow("right", CV_WINDOW_NORMAL);
-  imshow("right", results[1]);
+  // cv::namedWindow("right", CV_WINDOW_NORMAL);
+  // imshow("right", results[1]);
 
-  cv::waitKey(5000);
+  // cv::waitKey(5000);
 }
 
 unsigned int Renderer::nextPow2(unsigned int x) {

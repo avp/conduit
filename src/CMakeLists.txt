@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(conduit)
 
 # Flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g -Wno-deprecated")
 
 # Options for output
 set(CMAKE_COLOR_MAKEFILE on)
@@ -36,6 +36,7 @@ set(VIDEOREADER videoreader/videoreader.cpp)
 set(RENDERER renderer/renderer.cpp)
 set(UTIL util/imageutil.cpp util/cylinderwarp.cpp)
 set(RENDERTEST rendertest/rendertest.cpp)
+set(OCULUS2 oculus2/oculus2.cpp)
 
 # Final executable
 add_executable(conduit main.cpp
@@ -44,6 +45,7 @@ add_executable(conduit main.cpp
   ${VIDEOREADER}
   ${RENDERER}
   ${UTIL}
+  ${OCULUS2}
   )
 
 target_link_libraries(conduit

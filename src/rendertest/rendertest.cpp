@@ -176,6 +176,25 @@ GLuint loadTexture(const cv::Mat& image) {
 }
 
 int RenderTest::renderTest(int argc, char **argv, cv::Mat& image) {
+	using std::cout;
+	using std::cerr;
+	using std::endl;
+
+	if (!ovr_Initialize()) {
+		cerr << "Failed to initialize OVR..." << endl;
+	}
+
+	ovrHmd hmd = ovrHmd_Create(0);
+	if (!hmd) {
+	  cout << "Failed to open Oculus device, using debug mode." << endl;
+	  hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+	  if (!hmd) {
+	    cerr << "Failed to debug mode HMD." << endl;
+	    exit(1);
+	  }
+	}
+
+	cout << "HMD Initialized: " << hmd->ProductName << endl;
 
 	// init GLUT and create window
 	glutInit(&argc, argv);
@@ -206,6 +225,10 @@ int RenderTest::renderTest(int argc, char **argv, cv::Mat& image) {
 
 	// enter GLUT event processing cycle
 	glutMainLoop();
+
+	// TODO: Where to put these?
+	ovrHmd_Destroy(hmd);
+    ovr_Shutdown();
 
 	return 1;
 }

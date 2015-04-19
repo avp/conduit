@@ -56,11 +56,12 @@ class Renderer {
     GLuint texture[2];
 
     int windowWidth, windowHeight;
-    int fovTexWidth, fovTexHeight;
-    unsigned int fbo, fovTex, fovDepth;
+    int fbTexWidth, fbTexHeight;
+    unsigned int fbo, fbTex, fbDepth;
     ovrGLConfig glCfg;
     unsigned int distortCaps, hmdCaps;
 
+    void updateRenderTarget();
     static GLuint loadTexture(const cv::Mat& image);
     static unsigned int nextPow2(unsigned int x);
 };

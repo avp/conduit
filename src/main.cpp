@@ -6,6 +6,7 @@
 #include "renderer/renderer.hpp"
 #include "rendertest/rendertest.hpp"
 #include "util/cylinderwarp.hpp"
+#include "oculus2/oculus2.hpp"
 
 static void usage() {
   std::cerr << "Please provide a runmode.\n" <<
@@ -14,6 +15,8 @@ static void usage() {
     "  playvideo\n" <<
     "  cylinderwarp\n" <<
     "  render\n" <<
+    "  rendertest\n" <<
+    "  oculus2\n" <<
     std::endl;
   std::exit(1);
 }
@@ -87,6 +90,10 @@ static int renderTest(int argc, char* argv[]) {
   return RenderTest::renderTest(argc, argv, left);
 }
 
+static int oculus2(int argc, char* argv[]) {
+  return Oculus2::main(argc, argv);
+}
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     usage();
@@ -104,6 +111,8 @@ int main(int argc, char* argv[]) {
     return renderStereo(argc, argv);
   } else if (runMode == "rendertest") {
     return renderTest(argc, argv);
+  } else if (runMode == "oculus2") {
+    return oculus2(argc, argv);
   } else {
     usage();
   }
