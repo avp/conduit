@@ -72,7 +72,19 @@ static int renderStereo(int argc, char* argv[]) {
 }
 
 static int renderTest(int argc, char* argv[]) {
-  return RenderTest::renderTest(argc, argv);
+  if (argc < 3) {
+    std::cerr << "Usage: "
+      << argv[0]
+      << " rendertest filename"
+      << std::endl;
+    return 1;
+  }
+  std::string filename = argv[2];
+  VideoReader videoReader(filename);
+  cv::Mat image = videoReader.getFrame();
+  cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
+
+  return RenderTest::renderTest(argc, argv, left);
 }
 
 int main(int argc, char* argv[]) {

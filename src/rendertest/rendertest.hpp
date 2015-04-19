@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -12,7 +13,7 @@
 
 class RenderTest {
   public:
-    static int renderTest(int argc, char **argv);
+    static int renderTest(int argc, char **argv, cv::Mat& image);
 };
 
 #endif

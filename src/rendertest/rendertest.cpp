@@ -5,11 +5,13 @@ float angle = 0.0f;
 // actual vector representing the camera's direction
 float lx=0.0f,lz=-1.0f;
 // XZ position of the camera
-float x=0.0f, z=5.0f;
+float x=0.0f, z=0.0f;
 // the key states. These variables will be zero
 //when no key is being presses
 float deltaAngle = 0.0f;
 float deltaMove = 0;
+
+GLuint ourTexture;
 
 void changeSize(int w, int h) {
 
@@ -97,25 +99,29 @@ void renderScene(void) {
 
 // Draw ground
 
-	glColor3f(1,0,0);
+	glColor3f(1,1,1);
 	glPushMatrix();
-	// glRotatef(45.0,1.0,0.0,0.0);
-	gluCylinder(qobj, 5.0, 5.0, 40.0, 20, 20);
+	glRotatef(90.0,1.0,0.0,0.0);
+	glTranslatef(0,0,-5);
+	gluQuadricTexture(qobj, true);
+	glBindTexture(GL_TEXTURE_2D, ourTexture);
+	gluCylinder(qobj, 5.0, 5.0, 10.0, 20, 20);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glPopMatrix();
 
-	glColor3f(0.9f, 0.9f, 0.9f);
+	// glColor3f(0.9f, 0.9f, 0.9f);
 
-	glBegin(GL_QUADS);
-		glVertex3f(-100.0f, 0.0f, -100.0f);
-		glVertex3f(-100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f, -100.0f);
-	glEnd();
+	// glBegin(GL_QUADS);
+	// 	glVertex3f(-100.0f, 0.0f, -100.0f);
+	// 	glVertex3f(-100.0f, 0.0f,  100.0f);
+	// 	glVertex3f( 100.0f, 0.0f,  100.0f);
+	// 	glVertex3f( 100.0f, 0.0f, -100.0f);
+	// glEnd();
 
 // Draw 36 SnowMen
-
 	for(int i = -3; i < 3; i++)
 		for(int j=-3; j < 3; j++) {
+			if (i == 0 && j == 0) continue;
 			glPushMatrix();
 			glTranslatef(i*10.0,0,j * 10.0);
 			drawSnowMan();
@@ -146,7 +152,30 @@ void releaseKey(int key, int x, int y) {
 	}
 }
 
-int RenderTest::renderTest(int argc, char **argv) {
+GLuint loadTexture(const cv::Mat& image) {
+  int height = image.rows;
+  int width = image.cols;
+
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+  // build our texture
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
+      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return texture;
+}
+
+int RenderTest::renderTest(int argc, char **argv, cv::Mat& image) {
 
 	// init GLUT and create window
 	glutInit(&argc, argv);
@@ -168,9 +197,12 @@ int RenderTest::renderTest(int argc, char **argv) {
 
 	// OpenGL init
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
 
+	// Custom cylinder code
 	qobj = gluNewQuadric();
 	gluQuadricNormals(qobj, GLU_SMOOTH);
+	ourTexture = loadTexture(image);
 
 	// enter GLUT event processing cycle
 	glutMainLoop();

@@ -61,7 +61,7 @@ class Renderer {
     ovrGLConfig glCfg;
     unsigned int distortCaps, hmdCaps;
 
-    GLuint loadTexture(const cv::Mat& image);
+    static GLuint loadTexture(const cv::Mat& image);
     static unsigned int nextPow2(unsigned int x);
 };
 
