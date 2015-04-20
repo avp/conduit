@@ -59,6 +59,10 @@ static unsigned int hmd_caps;
 
 static unsigned int chess_tex;
 
+static GLUquadric* qobj;
+
+static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
+
 
 int Oculus2::main(int argc, char **argv)
 {
@@ -105,8 +109,10 @@ int init(void)
 
 	glewInit();
 
+	bool is_debug = false;
 	if(!(hmd = ovrHmd_Create(0))) {
 		fprintf(stderr, "failed to open Oculus HMD, falling back to virtual debug HMD\n");
+		is_debug = true;
 		if(!(hmd = ovrHmd_CreateDebug(ovrHmd_DK2))) {
 			fprintf(stderr, "failed to create virtual debug HMD\n");
 			return -1;
@@ -115,10 +121,15 @@ int init(void)
 	printf("initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
 
 	/* resize our window to match the HMD resolution */
-	SDL_SetWindowSize(win, hmd->Resolution.w, hmd->Resolution.h);
-	SDL_SetWindowPosition(win, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	win_width = hmd->Resolution.w;
 	win_height = hmd->Resolution.h;
+	if (is_debug) {
+		win_width /= 2;
+		win_height /= 2;
+	}
+
+	SDL_SetWindowSize(win, win_width, win_height);
+	SDL_SetWindowPosition(win, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
 	/* enable position and rotation tracking */
 	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
@@ -198,11 +209,20 @@ int init(void)
 	glClearColor(0.1, 0.1, 0.1, 1);
 
 	chess_tex = gen_chess_tex(1.0, 0.7, 0.4, 0.4, 0.7, 1.0);
+
+	qobj = gluNewQuadric();
+	gluQuadricNormals(qobj, GLU_SMOOTH);
+
+	if (!is_debug)
+		toggle_hmd_fullscreen();
+
 	return 0;
 }
 
 void cleanup(void)
 {
+	printf("Cleaning up...\n");
+
 	if(hmd) {
 		ovrHmd_Destroy(hmd);
 	}
@@ -290,6 +310,8 @@ void display(void)
 		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+
+
 		glTranslatef(eye_rdesc[eye].HmdToEyeViewOffset.x,
 				eye_rdesc[eye].HmdToEyeViewOffset.y,
 				eye_rdesc[eye].HmdToEyeViewOffset.z);
@@ -300,6 +322,8 @@ void display(void)
 		glTranslatef(-pose[eye].Position.x, -pose[eye].Position.y, -pose[eye].Position.z);
 		/* move the camera to the eye level of the user */
 		glTranslatef(0, -ovrHmd_GetFloat(hmd, OVR_KEY_EYE_HEIGHT, 1.65), 0);
+		glRotatef(ourAngle, 0, -1, 0);
+		glTranslatef(xPos, yPos, zPos);
 
 		/* finally draw the scene for this eye */
 		draw_scene();
@@ -330,6 +354,7 @@ void reshape(int x, int y)
 void draw_scene(void)
 {
 	int i;
+	float white[] = {1, 1, 1, 1};
 	float grey[] = {0.8, 0.8, 0.8, 1};
 	float col[] = {0, 0, 0, 1};
 	float lpos[][4] = {
@@ -347,6 +372,21 @@ void draw_scene(void)
 	}
 
 	glMatrixMode(GL_MODELVIEW);
+
+	glPushMatrix();
+	glFrontFace(GL_CW);
+	glRotatef(90.0,1.0,0.0,0.0);
+	glTranslatef(0,0,-20);
+	glEnable(GL_TEXTURE_2D);
+	gluQuadricTexture(qobj, true);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, white);
+	glBindTexture(GL_TEXTURE_2D, chess_tex);
+	glColor3f(1,1,1);
+	gluCylinder(qobj, 5.0, 5.0, 40.0, 20, 20);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+	glFrontFace(GL_CW);
+	glPopMatrix();
 
 	glPushMatrix();
 	glTranslatef(0, 10, 0);
@@ -391,6 +431,7 @@ void draw_box(float xsz, float ysz, float zsz, float norm_sign)
 {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+
 	glScalef(xsz * 0.5, ysz * 0.5, zsz * 0.5);
 
 	if(norm_sign < 0.0) {
@@ -509,6 +550,37 @@ int handle_event(SDL_Event *ev)
 
 int key_event(int key, int state)
 {
+	if (state) {
+		switch( key ){
+			case SDLK_LEFT:
+			case SDLK_a:
+				xPos -= 1;
+				break;
+			case SDLK_RIGHT:
+			case SDLK_d:
+				xPos += 1;
+				break;
+			case SDLK_UP:
+			case SDLK_w:
+				zPos += 1;
+				break;
+			case SDLK_DOWN:
+			case SDLK_s:
+				zPos -= 1;
+				break;
+			case SDLK_q:
+				ourAngle += 45;
+				break;
+			case SDLK_e:
+				ourAngle -= 45;
+				break;
+
+			default:
+				break;
+		}
+	}
+
+
 	if(state) {
 		ovrHSWDisplayState hsw;
 		ovrHmd_GetHSWDisplayState(hmd, &hsw);

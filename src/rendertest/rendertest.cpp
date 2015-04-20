@@ -1,17 +1,17 @@
 #include "rendertest.hpp"
 
 // angle of rotation for the camera direction
-float angle = 0.0f;
+static float angle = 0.0f;
 // actual vector representing the camera's direction
-float lx=0.0f,lz=-1.0f;
+static float lx=0.0f,lz=-1.0f;
 // XZ position of the camera
-float x=0.0f, z=0.0f;
+static float x=0.0f, z=0.0f;
 // the key states. These variables will be zero
 //when no key is being presses
-float deltaAngle = 0.0f;
-float deltaMove = 0;
+static float deltaAngle = 0.0f;
+static float deltaMove = 0;
 
-GLuint ourTexture;
+static GLuint ourTexture;
 
 void changeSize(int w, int h) {
 
