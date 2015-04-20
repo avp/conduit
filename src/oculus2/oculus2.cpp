@@ -66,14 +66,13 @@ static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
 
 static GLuint videoTexture;
 
-static GLuint loadTexture(const cv::Mat& image) {
+static bool nextFrame = false;
+
+static void loadTexture(const GLuint texture, const cv::Mat& image) {
   int height = image.rows;
   int width = image.cols;
 
-  GLuint texture;
-  glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
-
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -82,13 +81,16 @@ static GLuint loadTexture(const cv::Mat& image) {
   // build our texture
   // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
   //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
-  gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0,
       GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
 
+  // gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
+  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
   glBindTexture(GL_TEXTURE_2D, 0);
-  return texture;
 }
 
+static int videoFrameCount = 0;
 
 int Oculus2::main(int argc, char **argv)
 {
@@ -108,7 +110,8 @@ int Oculus2::main(int argc, char **argv)
 	VideoReader videoReader(filename);
 	cv::Mat image = videoReader.getFrame();
 	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
-	videoTexture = loadTexture(left);
+	glGenTextures(1, &videoTexture);
+	loadTexture(videoTexture, left);
 
 	for(;;) {
 		SDL_Event ev;
@@ -118,6 +121,18 @@ int Oculus2::main(int argc, char **argv)
 			}
 		}
 		display();
+
+		if (videoFrameCount++ > 25) {
+			// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
+			videoFrameCount = 0;
+
+			// for (int i = 0; i < 10; i++) {
+				image = videoReader.getFrame();
+				// printf("next\n");
+			// }
+			left = cv::Mat(image, cv::Range(0, image.rows / 2));
+			loadTexture(videoTexture, left);
+		}
 	}
 
 done:
@@ -578,6 +593,11 @@ int key_event(int key, int state)
 		switch(key) {
 		case 27:
 			return -1;
+
+		case SDLK_RETURN:
+			nextFrame = true;
+			printf("next frame\n");
+			break;
 
 		case ' ':
 		case 'r':
