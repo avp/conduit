@@ -32,7 +32,7 @@ static int init(void);
 static void cleanup(void);
 static void toggle_hmd_fullscreen(void);
 static void display(void);
-static void draw_scene(void);
+static void draw_scene(ovrEyeType);
 static void draw_box(float xsz, float ysz, float zsz, float norm_sign);
 static void update_rtarg(int width, int height);
 static int handle_event(SDL_Event *ev);
@@ -64,9 +64,11 @@ static GLUquadric* qobj;
 
 static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
 
-static GLuint videoTexture;
+static GLuint videoTextureLeft;
+static GLuint videoTextureRight;
 
 static bool nextFrame = false;
+static bool three_d_enabled = true;
 
 static void loadTexture(const GLuint texture, const cv::Mat& image) {
   int height = image.rows;
@@ -110,8 +112,11 @@ int Oculus2::main(int argc, char **argv)
 	VideoReader videoReader(filename);
 	cv::Mat image = videoReader.getFrame();
 	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
-	glGenTextures(1, &videoTexture);
-	loadTexture(videoTexture, left);
+	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2 + 1, image.rows - 1));
+	glGenTextures(1, &videoTextureLeft);
+	glGenTextures(1, &videoTextureRight);
+	loadTexture(videoTextureLeft, left);
+	loadTexture(videoTextureRight, right);
 
 	for(;;) {
 		SDL_Event ev;
@@ -126,12 +131,12 @@ int Oculus2::main(int argc, char **argv)
 			// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
 			videoFrameCount = 0;
 
-			// for (int i = 0; i < 10; i++) {
-				image = videoReader.getFrame();
-				// printf("next\n");
-			// }
+			image = videoReader.getFrame();
+
 			left = cv::Mat(image, cv::Range(0, image.rows / 2));
-			loadTexture(videoTexture, left);
+			right = cv::Mat(image, cv::Range(image.rows / 2 + 1, image.rows - 1));
+			loadTexture(videoTextureLeft, left);
+			loadTexture(videoTextureRight, right);
 		}
 	}
 
@@ -381,7 +386,7 @@ void display()
 		glTranslatef(xPos, yPos, zPos);
 
 		/* finally draw the scene for this eye */
-		draw_scene();
+		draw_scene(eye);
 	}
 
 	/* after drawing both eyes into the texture render target, revert to drawing directly to the
@@ -406,27 +411,23 @@ void reshape(int x, int y)
 	win_height = y;
 }
 
-void draw_cylinder() {
-	glPushMatrix();
+void draw_scene(ovrEyeType eye)
+{
+	glMatrixMode(GL_MODELVIEW);
+
+	// glPushMatrix();
 	glFrontFace(GL_CW);
 	glRotatef(90.0,1.0,0.0,0.0);
 	glTranslatef(0,0,-11);
 	glEnable(GL_TEXTURE_2D);
 	gluQuadricTexture(qobj, true);
-	glBindTexture(GL_TEXTURE_2D, videoTexture);
+	glBindTexture(GL_TEXTURE_2D, eye == ovrEye_Left || !three_d_enabled ? videoTextureLeft : videoTextureRight);
 	glColor3f(1,1,1);
 	gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
-	glFrontFace(GL_CW);
-	glPopMatrix();
-}
-
-void draw_scene(void)
-{
-	glMatrixMode(GL_MODELVIEW);
-
-	draw_cylinder();
+	// glFrontFace(GL_CW);
+	// glPopMatrix();
 }
 
 void draw_box(float xsz, float ysz, float zsz, float norm_sign)
@@ -603,6 +604,11 @@ int key_event(int key, int state)
 		case 'r':
 			/* allow the user to recenter by pressing space */
 			ovrHmd_RecenterPose(hmd);
+			break;
+
+		case 'g':
+			three_d_enabled = !three_d_enabled;
+			printf("Toggling 3D to %d\n", three_d_enabled);
 			break;
 
 		case 'f':
