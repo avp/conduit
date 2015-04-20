@@ -26,6 +26,7 @@
 #include <OVR_CAPI_GL.h>
 
 #include "oculus2.hpp"
+#include "../videoreader/videoreader.hpp"
 
 static int init(void);
 static void cleanup(void);
@@ -63,12 +64,51 @@ static GLUquadric* qobj;
 
 static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
 
+static GLuint videoTexture;
+
+static GLuint loadTexture(const cv::Mat& image) {
+  int height = image.rows;
+  int width = image.cols;
+
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+  // build our texture
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+  gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
+      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return texture;
+}
+
 
 int Oculus2::main(int argc, char **argv)
 {
+	if (argc < 3) {
+		std::cerr << "Usage: "
+		 << argv[0]
+		 << " rendertest filename"
+		 << std::endl;
+		return 1;
+	}
+
 	if(init() == -1) {
 		return 1;
 	}
+
+	std::string filename = argv[2];
+	VideoReader videoReader(filename);
+	cv::Mat image = videoReader.getFrame();
+	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
+	videoTexture = loadTexture(left);
 
 	for(;;) {
 		SDL_Event ev;
@@ -201,9 +241,9 @@ int init(void)
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1);
+	// glEnable(GL_LIGHTING);
+	// glEnable(GL_LIGHT0);
+	// glEnable(GL_LIGHT1);
 	glEnable(GL_NORMALIZE);
 
 	glClearColor(0.1, 0.1, 0.1, 1);
@@ -268,7 +308,7 @@ void toggle_hmd_fullscreen(void)
 	}
 }
 
-void display(void)
+void display()
 {
 	int i;
 	ovrMatrix4f proj;
@@ -351,80 +391,27 @@ void reshape(int x, int y)
 	win_height = y;
 }
 
-void draw_scene(void)
-{
-	int i;
-	float white[] = {1, 1, 1, 1};
-	float grey[] = {0.8, 0.8, 0.8, 1};
-	float col[] = {0, 0, 0, 1};
-	float lpos[][4] = {
-		{-8, 2, 10, 1},
-		{0, 15, 0, 1}
-	};
-	float lcol[][4] = {
-		{0.8, 0.8, 0.8, 1},
-		{0.4, 0.3, 0.3, 1}
-	};
-
-	for(i=0; i<2; i++) {
-		glLightfv(GL_LIGHT0 + i, GL_POSITION, lpos[i]);
-		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, lcol[i]);
-	}
-
-	glMatrixMode(GL_MODELVIEW);
-
+void draw_cylinder() {
 	glPushMatrix();
 	glFrontFace(GL_CW);
 	glRotatef(90.0,1.0,0.0,0.0);
-	glTranslatef(0,0,-20);
+	glTranslatef(0,0,-11);
 	glEnable(GL_TEXTURE_2D);
 	gluQuadricTexture(qobj, true);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, white);
-	glBindTexture(GL_TEXTURE_2D, chess_tex);
+	glBindTexture(GL_TEXTURE_2D, videoTexture);
 	glColor3f(1,1,1);
-	gluCylinder(qobj, 5.0, 5.0, 40.0, 20, 20);
+	gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glFrontFace(GL_CW);
 	glPopMatrix();
+}
 
-	glPushMatrix();
-	glTranslatef(0, 10, 0);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, grey);
-	glBindTexture(GL_TEXTURE_2D, chess_tex);
-	glEnable(GL_TEXTURE_2D);
-	draw_box(30, 20, 30, -1.0);
-	glDisable(GL_TEXTURE_2D);
-	glPopMatrix();
+void draw_scene(void)
+{
+	glMatrixMode(GL_MODELVIEW);
 
-	for(i=0; i<4; i++) {
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, grey);
-		glPushMatrix();
-		glTranslatef(i & 1 ? 5 : -5, 1, i & 2 ? -5 : 5);
-		draw_box(0.5, 2, 0.5, 1.0);
-		glPopMatrix();
-
-		col[0] = i & 1 ? 1.0 : 0.3;
-		col[1] = i == 0 ? 1.0 : 0.3;
-		col[2] = i & 2 ? 1.0 : 0.3;
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
-
-		glPushMatrix();
-		if(i & 1) {
-			glTranslatef(0, 0.25, i & 2 ? 2 : -2);
-		} else {
-			glTranslatef(i & 2 ? 2 : -2, 0.25, 0);
-		}
-		draw_box(0.5, 0.5, 0.5, 1.0);
-		glPopMatrix();
-	}
-
-	col[0] = 1;
-	col[1] = 1;
-	col[2] = 0.4;
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
-	draw_box(0.05, 1.2, 6, 1.0);
-	draw_box(6, 1.2, 0.05, 1.0);
+	draw_cylinder();
 }
 
 void draw_box(float xsz, float ysz, float zsz, float norm_sign)
