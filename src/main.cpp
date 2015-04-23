@@ -2,11 +2,13 @@
 #include <iostream>
 
 #include "buildtest/buildtest.hpp"
-#include "videoreader/videoreader.hpp"
+#include "oculus2/oculus2.hpp"
+#include "optimizer/optimizer.hpp"
 #include "renderer/renderer.hpp"
 #include "rendertest/rendertest.hpp"
+#include "timer/timer.hpp"
 #include "util/cylinderwarp.hpp"
-#include "oculus2/oculus2.hpp"
+#include "videoreader/videoreader.hpp"
 
 static void usage() {
   std::cerr << "Please provide a runmode.\n" <<
@@ -17,6 +19,7 @@ static void usage() {
     "  render\n" <<
     "  rendertest\n" <<
     "  oculus2\n" <<
+    "  optimize\n" <<
     std::endl;
   std::exit(1);
 }
@@ -94,6 +97,49 @@ static int oculus2(int argc, char* argv[]) {
   return Oculus2::main(argc, argv);
 }
 
+static int optimize(int argc, char* argv[]) {
+  if (argc < 3) {
+    std::cerr << "Usage: "
+      << argv[0]
+      << " optimize filename"
+      << std::endl;
+    return 1;
+  }
+  std::string filename = argv[2];
+  VideoReader videoReader(filename);
+  cv::Mat image = videoReader.getFrame();
+  cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
+
+  double start, end;
+
+  std::cout << "Optimizing image..." << std::endl;
+  start = Timer::time();
+  OptimizedImage optLeft = Optimizer::optimizeImage(left);
+  end = Timer::time();
+
+  size_t beforeSize = left.step[0] * left.rows;
+  size_t afterSize = optLeft.size();
+  double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
+  std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;
+  std::cout << "Ratio:     " << ratio << "%" << std::endl;
+  std::cout << "Time:      " << end - start << " ms" << std::endl;
+
+  std::cout << "Extracting image..." << std::endl;
+  start = Timer::time();
+  cv::Mat extractedLeft = Optimizer::extractImage(optLeft);
+  end = Timer::time();
+  std::cout << "Time:      " << end - start << " ms" << std::endl;
+
+  cv::namedWindow("Before", CV_WINDOW_NORMAL);
+  cv::imshow("Before", left);
+
+  cv::namedWindow("After", CV_WINDOW_NORMAL);
+  cv::imshow("After", extractedLeft);
+
+  cv::waitKey(0);
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     usage();
@@ -113,6 +159,8 @@ int main(int argc, char* argv[]) {
     return renderTest(argc, argv);
   } else if (runMode == "oculus2") {
     return oculus2(argc, argv);
+  } else if (runMode == "optimize") {
+    return optimize(argc, argv);
   } else {
     usage();
   }

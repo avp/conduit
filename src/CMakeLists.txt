@@ -37,6 +37,7 @@ set(RENDERER renderer/renderer.cpp)
 set(UTIL util/imageutil.cpp util/cylinderwarp.cpp)
 set(RENDERTEST rendertest/rendertest.cpp)
 set(OCULUS2 oculus2/oculus2.cpp)
+set(OPTIMIZER optimizer/optimizer.cpp)
 
 # Final executable
 add_executable(conduit main.cpp
@@ -46,6 +47,7 @@ add_executable(conduit main.cpp
   ${RENDERER}
   ${UTIL}
   ${OCULUS2}
+  ${OPTIMIZER}
   )
 
 target_link_libraries(conduit
