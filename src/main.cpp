@@ -114,10 +114,10 @@ static int optimize(int argc, char* argv[]) {
 
   std::cout << "Optimizing image..." << std::endl;
   start = Timer::time();
-  OptimizedImage optLeft = Optimizer::optimizeImage(left);
+  OptimizedImage optLeft = Optimizer::optimizeImage(left, 0);
   end = Timer::time();
 
-  size_t beforeSize = left.step[0] * left.rows;
+  size_t beforeSize = left.total() * left.elemSize();
   size_t afterSize = optLeft.size();
   double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
   std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;

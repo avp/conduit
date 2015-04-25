@@ -16,7 +16,7 @@ class OptimizedImage {
 
 class Optimizer {
   public:
-    static OptimizedImage optimizeImage(const cv::Mat& image);
+    static OptimizedImage optimizeImage(const cv::Mat& image, int angle);
     static cv::Mat extractImage(const OptimizedImage& image);
 };
 
