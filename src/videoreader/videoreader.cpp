@@ -43,7 +43,7 @@ bool VideoReader::showFrame() {
   double fps = 1.0 / ((end - start) / 1000.0);
   avgFps = ((avgFps * (double) framesCaptured) + fps) /
     ((double) framesCaptured + 1.0);
-  std::cout << avgFps << " Average FPS" << std::endl;
+  std::cout << "Frame took " << (end - start) << "ms; " << avgFps << " Average FPS" << std::endl;
 
   cv::imshow(WINDOW_NAME, frame);
   return true;
