@@ -15,8 +15,9 @@ VideoReader::VideoReader(std::string filename) {
 cv::Mat VideoReader::getFrame() {
   cv::Mat frame;
   videoCapture >> frame;
-  if (framesCaptured == 0 && frame.empty()) {
+  while (framesCaptured == 0 && frame.empty()) {
     videoCapture >> frame;
+    std::cout << "First frame empty. Trying again..." << std::endl;
   }
   if (!frame.empty()) {
     framesCaptured++;
