@@ -1,16 +1,29 @@
 #include "optimizer.hpp"
 
+#include <iostream>
+
 using cv::Mat;
 using cv::Range;
+using cv::Size;
 
 static const int CROP_ANGLE = 120;
+static const int FOCUS_WIDTH = 800;
+static const int BLUR_FACTOR = 5;
 
-OptimizedImage::OptimizedImage(const Mat& image) {
-  this->image = Mat(image);
+OptimizedImage::OptimizedImage(const Mat& focused,
+    const Mat& blurredLeft,
+    const Mat& blurredRight,
+    Size origSize) {
+  this->focused = Mat(focused);
+  this->blurredLeft = Mat(blurredLeft);
+  this->blurredRight = Mat(blurredRight);
+  this->origSize = origSize;
 }
 
 size_t OptimizedImage::size() {
-  return ImageUtil::imageSize(image);
+  return ImageUtil::imageSize(focused) +
+    ImageUtil::imageSize(blurredLeft) +
+    ImageUtil::imageSize(blurredRight);
 }
 
 OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
@@ -35,10 +48,35 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
     hconcat(leftMat, rightMat, cropped);
   }
 
-  OptimizedImage optImage(cropped);
+  leftCol = cropped.cols / 2 - FOCUS_WIDTH / 2;
+  rightCol = cropped.cols / 2 + FOCUS_WIDTH / 2;
+
+  Mat focused = Mat(cropped, Range::all(), Range(leftCol, rightCol));
+  Mat left = Mat(cropped, Range::all(), Range(0, leftCol));
+  Mat right = Mat(cropped, Range::all(), Range(rightCol, cropped.cols));
+
+  Size origSize(left.size());
+
+  Mat blurredLeft = left;
+  Mat blurredRight = right;
+
+  Size smallSize(left.cols / BLUR_FACTOR, left.rows / BLUR_FACTOR);
+  cv::resize(left, blurredLeft, smallSize);
+  cv::resize(right, blurredRight, smallSize);
+
+  OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize);
   return optImage;
 }
 
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
-  return Mat(optImage.image);
+  Mat tmp, fullImage;
+
+  Mat left, right;
+
+  cv::resize(optImage.blurredLeft, left, optImage.origSize);
+  cv::resize(optImage.blurredRight, right, optImage.origSize);
+
+  hconcat(left, optImage.focused, tmp);
+  hconcat(tmp, right, fullImage);
+  return fullImage;
 }
