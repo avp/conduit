@@ -1,8 +1,7 @@
 #include "optimizer.hpp"
 
-#include <iostream>
-
 using cv::Mat;
+using cv::Range;
 
 static const int CROP_ANGLE = 120;
 
@@ -11,25 +10,30 @@ OptimizedImage::OptimizedImage(const Mat& image) {
 }
 
 size_t OptimizedImage::size() {
-  // return image.step[0] * image.rows;
-  return image.total() * image.elemSize();
+  return ImageUtil::imageSize(image);
 }
 
 OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
-  angle = std::min(angle, 360 - (CROP_ANGLE / 2));
-  angle = std::max(angle, CROP_ANGLE / 2);
-
   int width = image.cols;
 
-  int leftAngle = angle - CROP_ANGLE / 2;
-  int rightAngle = angle + CROP_ANGLE / 2;
+  int leftAngle = (angle - CROP_ANGLE / 2) % 360;
+  int rightAngle = (angle + CROP_ANGLE / 2) % 360;
+
+  while (leftAngle < 0) {
+    leftAngle += 360;
+  }
 
   int leftCol = leftAngle / 360.0 * width;
   int rightCol = rightAngle / 360.0 * width;
 
-  std::cout << leftCol << " <-> " << rightCol << std::endl;
-
-  Mat cropped = Mat(image, cv::Range::all(), cv::Range(leftCol, rightCol));
+  Mat cropped;
+  if (leftCol < rightCol) {
+    cropped = Mat(image, Range::all(), Range(leftCol, rightCol));
+  } else {
+    Mat leftMat = Mat(image, Range::all(), Range(leftCol, width));
+    Mat rightMat = Mat(image, Range::all(), Range(0, rightCol));
+    hconcat(leftMat, rightMat, cropped);
+  }
 
   OptimizedImage optImage(cropped);
   return optImage;

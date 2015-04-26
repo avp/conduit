@@ -13,3 +13,7 @@ void ImageUtil::glPixelsToMat(cv::Mat& image) {
   cv::flip(image, flipped, 0);
   image = flipped;
 }
+
+size_t ImageUtil::imageSize(const cv::Mat& image) {
+  return image.total() * image.elemSize();
+}

@@ -8,6 +8,7 @@
 #include "rendertest/rendertest.hpp"
 #include "timer/timer.hpp"
 #include "util/cylinderwarp.hpp"
+#include "util/imageutil.hpp"
 #include "videoreader/videoreader.hpp"
 
 static void usage() {
@@ -117,7 +118,7 @@ static int optimize(int argc, char* argv[]) {
   OptimizedImage optLeft = Optimizer::optimizeImage(left, 0);
   end = Timer::time();
 
-  size_t beforeSize = left.total() * left.elemSize();
+  size_t beforeSize = ImageUtil::imageSize(left);
   size_t afterSize = optLeft.size();
   double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
   std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;

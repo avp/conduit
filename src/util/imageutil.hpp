@@ -18,6 +18,7 @@
 class ImageUtil {
   public:
     static void glPixelsToMat(cv::Mat& image);
+    static size_t imageSize(const cv::Mat& image);
 };
 
 #endif

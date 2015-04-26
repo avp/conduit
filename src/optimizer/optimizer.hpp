@@ -3,6 +3,8 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
+#include "../util/imageutil.hpp"
+
 class OptimizedImage {
   friend class Optimizer;
 
