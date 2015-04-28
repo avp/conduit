@@ -13,11 +13,15 @@ static const int BLUR_FACTOR = 5;
 OptimizedImage::OptimizedImage(const Mat& focused,
     const Mat& blurredLeft,
     const Mat& blurredRight,
-    Size origSize) {
+    Size origSize,
+    Size fullSize,
+    int origType) {
   this->focused = Mat(focused);
   this->blurredLeft = Mat(blurredLeft);
   this->blurredRight = Mat(blurredRight);
   this->origSize = origSize;
+  this->fullSize = fullSize;
+  this->origType = origType;
 }
 
 size_t OptimizedImage::size() {
@@ -77,12 +81,14 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   cv::resize(left, blurredLeft, smallSize);
   cv::resize(right, blurredRight, smallSize);
 
-  OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize);
+  std::cout << image.size() << std::endl;
+
+  OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize, image.size(), image.type());
   return optImage;
 }
 
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
-  Mat tmp, fullImage;
+  Mat tmp, croppedImage;
 
   Mat left, right;
 
@@ -90,6 +96,17 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   cv::resize(optImage.blurredRight, right, optImage.origSize);
 
   hconcat(left, optImage.focused, tmp);
-  hconcat(tmp, right, fullImage);
+  hconcat(tmp, right, croppedImage);
+
+  Mat tmp2, fullImage;
+
+  int leftBufferRows = croppedImage.size().height;
+  int leftBufferCols = (optImage.fullSize.width - croppedImage.size().width)/2;
+  Mat leftBuffer(leftBufferRows, leftBufferCols, optImage.origType);
+  hconcat(leftBuffer, croppedImage, tmp2);
+  int rightBufferCols = optImage.fullSize.width - tmp2.size().width;
+  Mat rightBuffer(leftBufferRows, rightBufferCols, optImage.origType);
+  hconcat(tmp2, rightBuffer, fullImage);
+
   return fullImage;
 }
