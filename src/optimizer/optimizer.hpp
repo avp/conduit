@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../util/imageutil.hpp"
+#include "../contracts.h"
 
 class OptimizedImage {
   friend class Optimizer;

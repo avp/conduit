@@ -109,6 +109,11 @@ static int optimize(int argc, char* argv[]) {
   std::string filename = argv[2];
   VideoReader videoReader(filename);
   cv::Mat image = videoReader.getFrame();
+  if (image.empty()) {
+    std::cout << "No frames left to show." << std::endl;
+    return false;
+  }
+
   cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
 
   double start, end;

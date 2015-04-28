@@ -8,6 +8,8 @@
 
 #include "../timer/timer.hpp"
 
+const int MAX_FRAMES_TO_DROP = 10;
+
 class VideoReader {
   public:
     VideoReader(std::string filename);

@@ -7,7 +7,7 @@ using cv::Range;
 using cv::Size;
 
 static const int CROP_ANGLE = 120;
-static const int FOCUS_WIDTH = 800;
+static const int FOCUS_ANGLE = 20;
 static const int BLUR_FACTOR = 5;
 
 OptimizedImage::OptimizedImage(const Mat& focused,
@@ -27,7 +27,11 @@ size_t OptimizedImage::size() {
 }
 
 OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
-  int width = image.cols;
+  REQUIRES(0 <= angle && angle < 360);
+  REQUIRES(FOCUS_ANGLE < CROP_ANGLE);
+
+  const int width = image.cols;
+  const double angleToWidth = width / 360.0;
 
   int leftAngle = (angle - CROP_ANGLE / 2) % 360;
   int rightAngle = (angle + CROP_ANGLE / 2) % 360;
@@ -35,9 +39,11 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   while (leftAngle < 0) {
     leftAngle += 360;
   }
+  ASSERT(0 <= leftAngle && leftAngle < 360);
+  ASSERT(0 <= rightAngle && rightAngle < 360);
 
-  int leftCol = leftAngle / 360.0 * width;
-  int rightCol = rightAngle / 360.0 * width;
+  int leftCol = leftAngle * angleToWidth;
+  int rightCol = rightAngle * angleToWidth;
 
   Mat cropped;
   if (leftCol < rightCol) {
@@ -48,9 +54,16 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
     hconcat(leftMat, rightMat, cropped);
   }
 
-  leftCol = cropped.cols / 2 - FOCUS_WIDTH / 2;
-  rightCol = cropped.cols / 2 + FOCUS_WIDTH / 2;
+  std::cout << "Cols = " << cropped.cols << "\n";
 
+  int focusWidth = FOCUS_ANGLE * angleToWidth;
+
+  leftCol = cropped.cols / 2 - focusWidth / 2;
+  rightCol = cropped.cols / 2 + focusWidth / 2;
+
+  ASSERT(0 <= leftCol);
+  ASSERT(leftCol <= rightCol);
+  ASSERT(rightCol < cropped.cols);
   Mat focused = Mat(cropped, Range::all(), Range(leftCol, rightCol));
   Mat left = Mat(cropped, Range::all(), Range(0, leftCol));
   Mat right = Mat(cropped, Range::all(), Range(rightCol, cropped.cols));
