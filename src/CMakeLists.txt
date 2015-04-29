@@ -39,6 +39,8 @@ set(RENDERTEST rendertest/rendertest.cpp)
 set(OCULUS2 oculus2/oculus2.cpp)
 set(OPTIMIZER optimizer/optimizer.cpp)
 
+LINK_DIRECTORIES( ${LINK_DIRECTORIES} /usr/local/lib/)
+
 # Final executable
 add_executable(conduit main.cpp
   ${RENDERTEST}
