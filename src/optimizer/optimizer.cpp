@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+using std::vector;
+
 using cv::Mat;
 using cv::Range;
 using cv::Size;
@@ -26,7 +28,7 @@ OptimizedImage::OptimizedImage(const Mat& focused,
   this->leftBuffer = leftBuffer;
 }
 
-size_t OptimizedImage::size() {
+size_t OptimizedImage::size() const {
   return ImageUtil::imageSize(focused) +
     ImageUtil::imageSize(blurredLeft) +
     ImageUtil::imageSize(blurredRight);
@@ -102,56 +104,54 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   cv::resize(optImage.blurredRight, right, optImage.origSize);
 
   // reconstruct cropped image
-  Mat tmp, croppedImage;
-  hconcat(left, optImage.focused, tmp);
-  hconcat(tmp, right, croppedImage);
-  
+  Mat croppedImage;
+  ImageUtil::hconcat3(left, optImage.focused, right, croppedImage);
+
   Mat fullLeft, fullCenter, fullRight;
-  
+
   int numRows = croppedImage.size().height;
 
   // Split into 2 cases. In either case, there are 3 images to create
   if (croppedImage.size().width + optImage.leftBuffer >= optImage.fullSize.width) {
     // cropped image wraps around
     // Reconstruct as cropped_right + black + cropped_left
-    
+
     // cropped right = leftBuffer to end, or in local coords, 0 to width - leftBuffer?
     // cropped left =
     // black = full width - right - left
-  
+
     int rightEndExclusive = optImage.fullSize.width - optImage.leftBuffer;
     ASSERT(0 <= rightEndExclusive && rightEndExclusive <= croppedImage.cols);
     fullRight = Mat(croppedImage, Range::all(), Range(0, rightEndExclusive));
     fullLeft = Mat(croppedImage, Range::all(), Range(rightEndExclusive, croppedImage.cols));
-    
+
     int centerCols = optImage.fullSize.width - fullRight.size().width - fullLeft.size().width;
     ASSERT(centerCols >= 0);
-    
+
     fullCenter = Mat(numRows, centerCols, optImage.origType);
     fullCenter.setTo(cv::Scalar(0,0,0));
-    
+
   } else {
     // cropped image fully contained
     // Reconstruct as black_left + cropped + black_right
-    
+
     int leftBufferCols = optImage.leftBuffer; //(optImage.fullSize.width - croppedImage.size().width)/2;
     fullLeft = Mat(numRows, leftBufferCols, optImage.origType);
     fullCenter = croppedImage;
 
     int rightBufferCols = optImage.fullSize.width - leftBufferCols - croppedImage.size().width;
     ASSERT(rightBufferCols >= 0);
-    
+
     fullRight = Mat(numRows, rightBufferCols, optImage.origType);
-    
+
     fullLeft.setTo(cv::Scalar(0,0,0));
     fullRight.setTo(cv::Scalar(0,0,0));
   }
 
 
-  Mat tmp2, fullImage;
-  hconcat(fullLeft, fullCenter, tmp2);
-  hconcat(tmp2, fullRight, fullImage);
-  
+  Mat fullImage;
+  ImageUtil::hconcat3(fullLeft, fullCenter, fullRight, fullImage);
+
   ENSURES(fullImage.size() == optImage.fullSize);
 
   return fullImage;

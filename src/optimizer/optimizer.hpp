@@ -1,6 +1,8 @@
 #ifndef OPTIMIZER_OPTIMIZER_H_
 #define OPTIMIZER_OPTIMIZER_H_
 
+#include <vector>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -12,7 +14,7 @@ class OptimizedImage {
   friend class Optimizer;
 
   public:
-    size_t size();
+    size_t size() const;
 
   private:
     OptimizedImage(const cv::Mat& focused,
