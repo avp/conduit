@@ -75,12 +75,10 @@ const static bool FROZEN = false;
 const static int FRAMES_FOR_UPDATE = 50;
 
 static float OculusZAngle = 0;
-static int LolAngle = 0;
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
-	OptimizedImage opt = Optimizer::optimizeImage(input, LolAngle);
-  LolAngle = (LolAngle + 45) % 360;
-	cv::Mat image = Optimizer::extractImage(opt);
+	OptimizedImage opt = Optimizer::optimizeImage(input, OculusZAngle);
+  cv::Mat image = Optimizer::extractImage(opt);
 
   int height = image.rows;
   int width = image.cols;
@@ -123,9 +121,11 @@ int Oculus2::main(int argc, char **argv)
 	VideoReader videoReader(filename);
 	cv::Mat image = videoReader.getFrame();
 	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
-	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2 + 1, image.rows - 1));
+	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
+  std::cout << "LEFT " << videoTextureLeft << " RIGHT" << videoTextureRight << "\n";
+  ASSERT(videoTextureLeft != videoTextureRight);
 	loadTexture(videoTextureLeft, left);
 	loadTexture(videoTextureRight, right);
 
@@ -145,7 +145,7 @@ int Oculus2::main(int argc, char **argv)
 			image = videoReader.getFrame();
 
 			left = cv::Mat(image, cv::Range(0, image.rows / 2));
-			right = cv::Mat(image, cv::Range(image.rows / 2 + 1, image.rows - 1));
+			right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
 			loadTexture(videoTextureLeft, left);
 			loadTexture(videoTextureRight, right);
 		}
