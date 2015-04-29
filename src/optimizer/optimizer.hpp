@@ -20,7 +20,8 @@ class OptimizedImage {
         const cv::Mat& blurredRight,
         cv::Size origSize,
         cv::Size fullSize,
-        int origType);
+        int origType,
+        int leftBuffer);
     cv::Mat image;
     cv::Mat focused;
     cv::Mat blurredLeft;
@@ -28,6 +29,7 @@ class OptimizedImage {
     cv::Size origSize;
     cv::Size fullSize;
     int origType;
+    int leftBuffer;
 };
 
 class Optimizer {

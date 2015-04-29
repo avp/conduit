@@ -24,6 +24,7 @@
 
 #include <OVR_CAPI.h>
 #include <OVR_CAPI_GL.h>
+#include <Extras/OVR_Math.h>
 
 #include "oculus2.hpp"
 #include "../videoreader/videoreader.hpp"
@@ -70,10 +71,15 @@ static GLuint videoTextureRight;
 
 static bool nextFrame = false;
 static bool three_d_enabled = true;
-const static bool FROZEN = true;
+const static bool FROZEN = false;
+const static int FRAMES_FOR_UPDATE = 50;
+
+static float OculusZAngle = 0;
+static int LolAngle = 0;
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
-	OptimizedImage opt = Optimizer::optimizeImage(input, 0);
+	OptimizedImage opt = Optimizer::optimizeImage(input, LolAngle);
+  LolAngle = (LolAngle + 45) % 360;
 	cv::Mat image = Optimizer::extractImage(opt);
 
   int height = image.rows;
@@ -132,7 +138,7 @@ int Oculus2::main(int argc, char **argv)
 		}
 		display();
 
-		if (!FROZEN && videoFrameCount++ > 25) {
+		if (!FROZEN && videoFrameCount++ > FRAMES_FOR_UPDATE) {
 			// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
 			videoFrameCount = 0;
 
@@ -375,7 +381,11 @@ void display()
 		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-
+  
+    OVR::Quatf q(pose[eye].Orientation);
+    float yaw = 0, pitch = 0, roll = 0;
+    q.GetEulerAngles<OVR::Axis_Z, OVR::Axis_X, OVR::Axis_Y>(&yaw, &pitch, &roll);
+    OculusZAngle = roll * MATH_DOUBLE_RADTODEGREEFACTOR;
 
 		glTranslatef(eye_rdesc[eye].HmdToEyeViewOffset.x,
 				eye_rdesc[eye].HmdToEyeViewOffset.y,
