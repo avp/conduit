@@ -58,8 +58,6 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
     hconcat(leftMat, rightMat, cropped);
   }
 
-  std::cout << "Cols = " << cropped.cols << "\n";
-
   int focusWidth = FOCUS_ANGLE * angleToWidth;
 
   leftCol = cropped.cols / 2 - focusWidth / 2;
@@ -80,8 +78,6 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   Size smallSize(left.cols / BLUR_FACTOR, left.rows / BLUR_FACTOR);
   cv::resize(left, blurredLeft, smallSize);
   cv::resize(right, blurredRight, smallSize);
-
-  std::cout << image.size() << std::endl;
 
   OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize, image.size(), image.type());
   return optImage;

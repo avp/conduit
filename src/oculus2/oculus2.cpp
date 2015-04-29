@@ -27,6 +27,7 @@
 
 #include "oculus2.hpp"
 #include "../videoreader/videoreader.hpp"
+ #include "../optimizer/optimizer.hpp"
 
 static int init(void);
 static void cleanup(void);
@@ -69,8 +70,12 @@ static GLuint videoTextureRight;
 
 static bool nextFrame = false;
 static bool three_d_enabled = true;
+const static bool FROZEN = true;
 
-static void loadTexture(const GLuint texture, const cv::Mat& image) {
+static void loadTexture(const GLuint texture, const cv::Mat& input) {
+	OptimizedImage opt = Optimizer::optimizeImage(input, 0);
+	cv::Mat image = Optimizer::extractImage(opt);
+
   int height = image.rows;
   int width = image.cols;
 
@@ -127,7 +132,7 @@ int Oculus2::main(int argc, char **argv)
 		}
 		display();
 
-		if (videoFrameCount++ > 25) {
+		if (!FROZEN && videoFrameCount++ > 25) {
 			// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
 			videoFrameCount = 0;
 
