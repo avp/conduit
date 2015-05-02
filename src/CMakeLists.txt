@@ -8,12 +8,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g -Wno-deprecated")
 # Options for output
 set(CMAKE_COLOR_MAKEFILE on)
 
+# OpenCV
+find_package(OpenCV REQUIRED)
+
 # CUDA
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -arch=sm_20)
-
-# OpenCV
-find_package(OpenCV REQUIRED)
+list(APPEND CUDA_NVCC_FLAGS ${OpenCV_COMPUTE_CAPABILITIES})
 
 # OpenGL
 find_package(OpenGL REQUIRED)
@@ -32,6 +33,7 @@ include_directories(${Oculus_INCLUDE_DIRS})
 
 # Compile each part
 cuda_compile(BUILDTEST buildtest/buildtest.cu)
+cuda_compile(CUDAUTIL util/cudautil.cu)
 set(VIDEOREADER videoreader/videoreader.cpp)
 set(RENDERER renderer/renderer.cpp)
 set(UTIL util/imageutil.cpp util/cylinderwarp.cpp)
@@ -39,12 +41,13 @@ set(RENDERTEST rendertest/rendertest.cpp)
 set(OCULUS2 oculus2/oculus2.cpp)
 set(OPTIMIZER optimizer/optimizer.cpp)
 
-LINK_DIRECTORIES( ${LINK_DIRECTORIES} /usr/local/lib/)
+LINK_DIRECTORIES(${LINK_DIRECTORIES} /usr/local/lib/)
 
 # Final executable
 add_executable(conduit main.cpp
-  ${RENDERTEST}
   ${BUILDTEST}
+  ${CUDAUTIL}
+  ${RENDERTEST}
   ${VIDEOREADER}
   ${RENDERER}
   ${UTIL}
