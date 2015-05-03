@@ -124,7 +124,6 @@ int Oculus2::main(int argc, char **argv)
 	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
-  std::cout << "LEFT " << videoTextureLeft << " RIGHT" << videoTextureRight << "\n";
   ASSERT(videoTextureLeft != videoTextureRight);
 	loadTexture(videoTextureLeft, left);
 	loadTexture(videoTextureRight, right);

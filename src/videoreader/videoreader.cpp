@@ -30,10 +30,16 @@ void VideoReader::bufferFrames(const std::string& filename) {
     }
     cv::Mat frame;
     videoCapture >> frame;
+    bool hadError = false;
     while (framesBuffered == 0 && frame.empty() && framesDropped++ < MAX_FRAMES_TO_DROP) {
       videoCapture >> frame;
       std::cout << "First frame empty. Trying again..." << std::endl;
+      hadError = true;
     }
+    if (hadError && !frame.empty()) {
+      std::cout << "First frame retrieved successfully." << std::endl;
+    }
+
     framesBuffered++;
     frameQueue.enqueue(frame);
     if (frame.empty()) {

@@ -1,6 +1,7 @@
 #include "optimizer.hpp"
 
 #include <iostream>
+#include <math.h>
 
 using std::vector;
 
@@ -17,14 +18,12 @@ OptimizedImage::OptimizedImage(const Mat& focused,
     const Mat& blurredRight,
     Size origSize,
     Size fullSize,
-    int origType,
     int leftBuffer) {
   this->focused = Mat(focused);
   this->blurredLeft = Mat(blurredLeft);
   this->blurredRight = Mat(blurredRight);
   this->origSize = origSize;
   this->fullSize = fullSize;
-  this->origType = origType;
   this->leftBuffer = leftBuffer;
 }
 
@@ -34,11 +33,17 @@ size_t OptimizedImage::size() const {
     ImageUtil::imageSize(blurredRight);
 }
 
+double constrainAngle(double x){
+  // https://stackoverflow.com/questions/11498169/dealing-with-angle-wrap-in-c-code
+  x = fmod(x,360);
+  if (x < 0)
+    x += 360;
+  ENSURES(0 <= x && x < 360);
+  return x;
+}
+
 OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
-  if (angle < 0)
-    angle += 360;
-  else if (angle > 360)
-    angle -= 360;
+  angle = constrainAngle(angle);
 
   REQUIRES(0 <= angle && angle < 360);
   REQUIRES(FOCUS_ANGLE < CROP_ANGLE);
@@ -94,7 +99,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   cv::resize(left, blurredLeft, smallSize);
   cv::resize(right, blurredRight, smallSize);
 
-  OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize, image.size(), image.type(), leftCol);
+  OptimizedImage optImage(focused, blurredLeft, blurredRight, origSize, image.size(), leftCol);
   return optImage;
 }
 
@@ -110,6 +115,8 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Mat fullLeft, fullCenter, fullRight;
 
   int numRows = croppedImage.size().height;
+
+  int origType = optImage.focused.type();
 
   // Split into 2 cases. In either case, there are 3 images to create
   if (croppedImage.size().width + optImage.leftBuffer >= optImage.fullSize.width) {
@@ -128,7 +135,7 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
     int centerCols = optImage.fullSize.width - fullRight.size().width - fullLeft.size().width;
     ASSERT(centerCols >= 0);
 
-    fullCenter = Mat(numRows, centerCols, optImage.origType);
+    fullCenter = Mat(numRows, centerCols, origType);
     fullCenter.setTo(cv::Scalar(0,0,0));
 
   } else {
@@ -136,13 +143,13 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
     // Reconstruct as black_left + cropped + black_right
 
     int leftBufferCols = optImage.leftBuffer; //(optImage.fullSize.width - croppedImage.size().width)/2;
-    fullLeft = Mat(numRows, leftBufferCols, optImage.origType);
+    fullLeft = Mat(numRows, leftBufferCols, origType);
     fullCenter = croppedImage;
 
     int rightBufferCols = optImage.fullSize.width - leftBufferCols - croppedImage.size().width;
     ASSERT(rightBufferCols >= 0);
 
-    fullRight = Mat(numRows, rightBufferCols, optImage.origType);
+    fullRight = Mat(numRows, rightBufferCols, origType);
 
     fullLeft.setTo(cv::Scalar(0,0,0));
     fullRight.setTo(cv::Scalar(0,0,0));
