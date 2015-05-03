@@ -2,25 +2,37 @@
 #define VIDEOREADER_VIDEOREADER_H_
 
 #include <iostream>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <thread>
 
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../timer/timer.hpp"
+#include "../util/workqueue.h"
 
 const int MAX_FRAMES_TO_DROP = 10;
 
 class VideoReader {
   public:
-    VideoReader(std::string filename);
+    VideoReader(const std::string& filename);
     cv::Mat getFrame();
     bool showFrame();
 
   private:
+    void bufferFrames(const std::string& filename);
+
     cv::VideoCapture videoCapture;
     int framesCaptured;
     bool windowCreated;
+    bool fullyBuffered;
     double avgFps;
+
+    std::thread bufferThread;
+    WorkQueue<cv::Mat> frameQueue;
+    pthread_cond_t queueCond;
+    pthread_mutex_t queueLock;
 };
 
 #endif
