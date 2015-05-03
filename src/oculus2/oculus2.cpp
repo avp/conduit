@@ -77,7 +77,8 @@ const static int FRAMES_FOR_UPDATE = 50;
 static float OculusZAngle = 0;
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
-	OptimizedImage opt = Optimizer::optimizeImage(input, OculusZAngle);
+
+	OptimizedImage opt = Optimizer::optimizeImage(input, -OculusZAngle + 180);
   cv::Mat image = Optimizer::extractImage(opt);
 
   int height = image.rows;
