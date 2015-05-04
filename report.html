@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="description" content="Oculus Render : 15-418 Final Project">
+
+  <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+  <title>Conduit: Final Report</title>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="header_wrap" class="outer">
+  <header class="inner">
+    <a id="forkme_banner" href="https://github.com/avp/conduit">View on GitHub</a>
+
+    <h1 id="project_title">Conduit</h1>
+
+    <h2 id="project_tagline">Aakash Patel &amp; Gregory Rose</h2>
+
+    <section id="downloads">
+      <a class="zip_download_link" href="https://github.com/avp/conduit/zipball/master">
+        Download this project as a .zip file
+      </a>
+      <a class="tar_download_link" href="https://github.com/avp/conduit/tarball/master">
+        Download this project as a tar.gz file
+      </a>
+    </section>
+  </header>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main_content_wrap" class="outer">
+  <section id="main_content" class="inner">
+    <h2>Final Report</h2>
+
+    <h3>Summary</h3>
+
+    <p>
+      Conduit is a project to reduce bandwidth requirements for streaming live 4K panoramic video to a HMD (head-mounted display, e.g. Oculus Rift). To do this, we will take advantage of the fact that the human eye has a much higher resolution in the center than in the outside, and transcode video on the outer part of your vision at a lower quality. Our goal is to do this with minimal latency, and maximum stream-per-system performance.
+    </p>
+
+    <h3>Background</h3>
+
+    <h4>Definitions</h4>
+
+    <p>
+      <strong>Source video:</strong>
+      The original raw 4K panoramic video stream we want to make available through HMDs.
+    </p>
+
+    <p>
+      <strong>View-optimized video:</strong>
+      The source video, cropped to show just the parts the user is looking at (plus some padding if they move).
+      This is optimized to display lower quality video to lower resolution parts of the human eye.
+    </p>
+
+    <p>
+      <strong>HMD video:</strong>
+      The video cropped to just the part the HMD is looking at, re-projected for both eyes, and formatted via barrel distortion for the Oculus.
+    </p>
+
+    <p>
+      <strong>Client:</strong>
+      A personal computer or phone receiving the video stream,
+      and performing some processing on the stream.
+    </p>
+
+    <h3>Approach</h3>
+
+    <p>
+      <!-- TODO Technologies used -->
+    </p>
+
+    <p>
+      <!-- TODO How did we parallelize -->
+    </p>
+
+    <p>
+      <!-- TODO Describe iteration of optimization (maybe more than 1 paragraph?) -->
+    </p>
+
+    <p>
+      <!-- TODO Mention existing pieces of code -->
+    </p>
+
+    <h3>Results</h3>
+
+    <p>
+      <!-- TODO Experimental setup  -->
+    </p>
+
+    <p>
+      <!-- TODO Performance results -->
+    </p>
+
+    <p>
+      <!-- TODO IMPORTANT: What limited speedup? Provide data and measurements. -->
+      <!-- This is a good way to get credit even if we didn't accomplish our objective. -->
+      <!-- Deeper analysis tralks about execution time as distinct components, with proportions of time spent. -->
+    </p>
+
+    <p>
+      <!-- TODO Was your choice of target machine sound? -->
+    </p>
+
+    <h3>References</h3>
+
+    <ol>
+      <!-- TODO References -->
+    </ol>
+
+    <h3>List of Work by Each Student</h3>
+
+    <p>
+      <!-- TODO List of work by each person -->
+    </p>
+  </section>
+</div>
+
+<!-- FOOTER  -->
+<div id="footer_wrap" class="outer">
+  <footer class="inner">
+    <p class="copyright">
+      Conduit maintained by
+      <a href="https://github.com/avp">avp</a>
+      and
+      <a href="https://github.com/grrosegr">grrosegr</a>
+    </p>
+  </footer>
+</div>
+
+</body>
+</html>
