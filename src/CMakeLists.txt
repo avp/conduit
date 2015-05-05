@@ -60,6 +60,7 @@ target_link_libraries(conduit
   ${OpenCV_LIBS}
   ${CUDA_LIBRARIES}
   ${Oculus_LIBRARIES}
+  ${CMAKE_DL_LIBS}
   )
 
 target_compile_features(conduit PRIVATE cxx_range_for)
