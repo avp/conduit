@@ -163,7 +163,9 @@ int init(void)
 	unsigned int flags;
 
 	/* libovr must be initialized before we create the OpenGL context */
-	ovr_Initialize(0);
+	if (!ovr_Initialize(0)) {
+		std::cerr << "Unable to initialize OVR" << std::endl;
+	}
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
