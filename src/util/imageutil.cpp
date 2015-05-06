@@ -28,3 +28,12 @@ void ImageUtil::hconcat3(const Mat& m1, const Mat& m2, const Mat& m3,
   mats.push_back(m3);
   hconcat(mats, dst);
 }
+
+void ImageUtil::vconcat3(const Mat& m1, const Mat& m2, const Mat& m3,
+    Mat& dst) {
+  std::vector<Mat> mats;
+  mats.push_back(m1);
+  mats.push_back(m2);
+  mats.push_back(m3);
+  vconcat(mats, dst);
+}
