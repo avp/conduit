@@ -59,7 +59,7 @@ namespace BuildTest {
 
     int localArr[N];
 
-    cudaMemcpy(localArr, arr, N * sizeof(int), cudaMemcpyDeviceToHost);
+    gpuErrchk(cudaMemcpy(localArr, arr, N * sizeof(int), cudaMemcpyDeviceToHost));
 
     int numErrors = 0;
     for (int i = 0; i < N; i++) {
