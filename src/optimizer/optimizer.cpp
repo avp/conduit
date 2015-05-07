@@ -42,6 +42,14 @@ size_t OptimizedImage::size() const {
     ImageUtil::imageSize(blurredBottom);
 }
 
+int constrainAngle(int x){
+  x = x % 360;
+  if (x < 0)
+    x += 360;
+  ENSURES(0 <= x && x < 360);
+  return x;
+}
+
 double constrainAngle(double x){
   // https://stackoverflow.com/questions/11498169/dealing-with-angle-wrap-in-c-code
   x = fmod(x,360);
@@ -53,24 +61,14 @@ double constrainAngle(double x){
 
 OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   angle = constrainAngle(angle);
-
-  REQUIRES(0 <= angle && angle < 360);
   REQUIRES(H_FOCUS_ANGLE < CROP_ANGLE);
-
-//  std::cout << angle << std::endl;
 
   const int width = image.cols;
   const double angleToWidth = width / 360.0;
   const double angleToHeight = width / 180.0;
 
-  int leftAngle = (angle - CROP_ANGLE / 2) % 360;
-  int rightAngle = (angle + CROP_ANGLE / 2) % 360;
-
-  while (leftAngle < 0) {
-    leftAngle += 360;
-  }
-  ASSERT(0 <= leftAngle && leftAngle < 360);
-  ASSERT(0 <= rightAngle && rightAngle < 360);
+  int leftAngle = constrainAngle(angle - CROP_ANGLE / 2);
+  int rightAngle = constrainAngle(angle + CROP_ANGLE / 2);
 
   int leftCol = leftAngle * angleToWidth;
   int rightCol = rightAngle * angleToWidth;
@@ -81,8 +79,12 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
 
   Mat cropped;
   if (leftCol < rightCol) {
+    // Cropped window doesn't wrap around, simple case.
     cropped = Mat(image, Range::all(), Range(leftCol, rightCol));
   } else {
+    // Cropped window *does* wrap around. We need to get the part
+    // before and after it wraps, which are in two separate places
+    // on the image.
     Mat leftMat = Mat(image, Range::all(), Range(leftCol, width));
     Mat rightMat = Mat(image, Range::all(), Range(0, rightCol));
     hconcat(leftMat, rightMat, cropped);
