@@ -9,7 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#ifdef WIN32
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <GL/glew.h>
 
 #ifdef WIN32
