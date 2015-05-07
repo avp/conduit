@@ -39,6 +39,8 @@ set(RENDERTEST rendertest/rendertest.cpp)
 set(OCULUS2 oculus2/oculus2.cpp)
 set(OPTIMIZER optimizer/optimizer.cpp)
 
+find_package (Threads)
+
 LINK_DIRECTORIES( ${LINK_DIRECTORIES} /usr/local/lib/)
 
 # Final executable
@@ -61,6 +63,7 @@ target_link_libraries(conduit
   ${CUDA_LIBRARIES}
   ${Oculus_LIBRARIES}
   ${CMAKE_DL_LIBS}
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 target_compile_features(conduit PRIVATE cxx_range_for)
