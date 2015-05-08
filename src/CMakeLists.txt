@@ -86,6 +86,8 @@ if (WIN32)
     ${Oculus_LIBRARIES}/../
 	C:/sdl2/lib/x64
 	C:/OculusSDK/LibOVR/Lib/Windows/x64/Release/VS2013
+	C:/pthreads-w32-2-9-1-release/Pre-built.2/lib/x64
+	C:/opencv/build/x64/vc12/lib
     )
 
   include_directories(
@@ -99,6 +101,7 @@ if (WIN32)
 	C:/sdl2/include
 	C:/OculusSDK/LibOVR/Include
 	C:/glm
+	C:/pthreads-w32-2-9-1-release/Pre-built.2/include
     )
 endif(WIN32)
 

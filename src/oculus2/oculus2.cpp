@@ -108,7 +108,7 @@ static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
 static int videoFrameCount = 0;
 
-int Oculus2::main(int argc, char **argv)
+int Oculus2::run(int argc, char **argv)
 {
 	if (argc < 3) {
 		std::cerr << "Usage: "

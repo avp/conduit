@@ -4,6 +4,9 @@
 #define UTIL_WORKQUEUE_H_
 
 #include <vector>
+#ifdef WIN32
+#include "pthread.h"
+#endif
 
 template <class T>
 class WorkQueue {

@@ -5,7 +5,7 @@
 
 class Oculus2 {
   public:
-  	static int main(int argc, char **argv);
+  	static int run(int argc, char **argv);
 };
 
 #endif

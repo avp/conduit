@@ -95,7 +95,7 @@ static int renderTest(int argc, char* argv[]) {
 }
 
 static int oculus2(int argc, char* argv[]) {
-  return Oculus2::main(argc, argv);
+  return Oculus2::run(argc, argv);
 }
 
 static int optimize(int argc, char* argv[]) {
