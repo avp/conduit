@@ -75,6 +75,8 @@ static bool nextFrame = false;
 static bool three_d_enabled = true;
 const static bool FROZEN = false;
 
+const static int ROTATION_GRANULARITY = 20;
+
 static float OculusZAngle = 0;
 static bool USE_OPTIMIZER = true;
 
@@ -544,10 +546,10 @@ int key_event(int key, int state)
 				zPos -= 1;
 				break;
 			case SDLK_q:
-				ourAngle += 45;
+				ourAngle += ROTATION_GRANULARITY;
 				break;
 			case SDLK_e:
-				ourAngle -= 45;
+				ourAngle -= ROTATION_GRANULARITY;
 				break;
 
 			default:
