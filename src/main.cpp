@@ -6,9 +6,9 @@
 #include "optimizer/optimizer.hpp"
 #include "renderer/renderer.hpp"
 #include "rendertest/rendertest.hpp"
-#include "timer/timer.hpp"
 #include "util/cylinderwarp.hpp"
 #include "util/imageutil.hpp"
+#include "util/timer.hpp"
 #include "videoreader/videoreader.hpp"
 
 static void usage() {
@@ -108,33 +108,43 @@ static int optimize(int argc, char* argv[]) {
   }
   std::string filename = argv[2];
   VideoReader videoReader(filename);
-  cv::Mat image = videoReader.getFrame();
-  if (image.empty()) {
-    std::cout << "No frames left to show." << std::endl;
-    return 1;
-  }
-
-  cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
-
   double start, end;
 
-  std::cout << "Optimizing image..." << std::endl;
-  start = Timer::time();
-  OptimizedImage optLeft = Optimizer::optimizeImage(left, 180, 90);
-  end = Timer::time();
+  cv::Mat left, extractedLeft;
 
-  size_t beforeSize = ImageUtil::imageSize(left);
-  size_t afterSize = optLeft.size();
-  double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
-  std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;
-  std::cout << "Ratio:     " << ratio << "%" << std::endl;
-  std::cout << "Time:      " << end - start << " ms" << std::endl;
+  for (int i = 0; i < 5; i++) {
+    std::cout << "\nFrame " << i << std::endl;
 
-  std::cout << "Extracting image..." << std::endl;
-  start = Timer::time();
-  cv::Mat extractedLeft = Optimizer::extractImage(optLeft);
-  end = Timer::time();
-  std::cout << "Time:      " << end - start << " ms" << std::endl;
+    start = Timer::time();
+    cv::Mat image = cv::Mat(videoReader.getFrame());
+    end = Timer::time();
+    std::cout << "Get frame: " << end - start << " ms" << std::endl;
+
+    if (image.empty()) {
+      std::cout << "No frames left to show." << std::endl;
+      return 1;
+    }
+
+    left = cv::Mat(image, cv::Range(0, image.rows / 2));
+
+    std::cout << "Optimizing image..." << std::endl;
+    start = Timer::time();
+    OptimizedImage optLeft = Optimizer::optimizeImage(left, 180, 90);
+    end = Timer::time();
+
+    size_t beforeSize = ImageUtil::imageSize(left);
+    size_t afterSize = optLeft.size();
+    double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
+    std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;
+    std::cout << "Ratio:     " << ratio << "%" << std::endl;
+    std::cout << "Time:      " << end - start << " ms" << std::endl;
+
+    std::cout << "Extracting image..." << std::endl;
+    start = Timer::time();
+    extractedLeft = Optimizer::extractImage(optLeft);
+    end = Timer::time();
+    std::cout << "Time:      " << end - start << " ms" << std::endl;
+  }
 
   cv::namedWindow("Before", CV_WINDOW_NORMAL);
   cv::imshow("Before", left);

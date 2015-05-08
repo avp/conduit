@@ -9,7 +9,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../timer/timer.hpp"
+#include "../util/timer.hpp"
 #include "../util/workqueue.h"
 
 const int MAX_FRAMES_TO_DROP = 10;

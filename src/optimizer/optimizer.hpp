@@ -8,7 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../util/imageutil.hpp"
-#include "../timer/timer.hpp"
+#include "../util/timer.hpp"
 #include "../contracts.h"
 
 class OptimizedImage {
