@@ -1,5 +1,7 @@
 #include "videoreader.hpp"
 
+#include "../optimizer/optimizer.hpp"
+
 #define WINDOW_NAME "video"
 
 VideoReader::VideoReader(const std::string& filename) {
@@ -41,6 +43,8 @@ void VideoReader::bufferFrames(const std::string& filename) {
     }
 
     framesBuffered++;
+    frame = Optimizer::processImage(frame, optimizeAngle, 90);
+
     frameQueue.enqueue(frame);
     if (frame.empty()) {
       fullyBuffered = true;

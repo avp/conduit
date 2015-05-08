@@ -44,6 +44,8 @@ class Optimizer {
     static OptimizedImage optimizeImage(const cv::Mat& image,
         int angle, int vAngle);
     static cv::Mat extractImage(const OptimizedImage& image);
+    static cv::Mat processImage(const cv::Mat& image,
+        int angle, int vAngle);
 };
 
 #endif

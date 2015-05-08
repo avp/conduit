@@ -31,14 +31,13 @@
 #include <Extras/OVR_Math.h>
 
 #include "oculus2.hpp"
- #include "../optimizer/optimizer.hpp"
+#include "../optimizer/optimizer.hpp"
 
 static int init(void);
 static void cleanup(void);
 static void toggle_hmd_fullscreen(void);
 static void display(void);
 static void draw_scene(ovrEyeType);
-static void draw_box(float xsz, float ysz, float zsz, float norm_sign);
 static void update_rtarg(int width, int height);
 static int handle_event(SDL_Event *ev);
 static int key_event(int key, int state);
@@ -79,15 +78,18 @@ const static bool FROZEN = false;
 static float OculusZAngle = 0;
 static bool USE_OPTIMIZER = true;
 
+static inline float getAngleForOptimize() {
+	return -(OculusZAngle + ourAngle) + 180;
+}
+
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
   cv::Mat image;
-  if (USE_OPTIMIZER) {
-  	OptimizedImage opt = Optimizer::optimizeImage(input, -(OculusZAngle + ourAngle) + 180, 90);
-  	image = Optimizer::extractImage(opt);
-  } else {
+  // if (USE_OPTIMIZER) {
+  // 	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
+  // } else {
   	image = input;
-  }
+  // }
 
   int height = image.rows;
   int width = image.cols;
@@ -110,7 +112,7 @@ static void loadTexture(const GLuint texture, const cv::Mat& input) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void updateVideoFrame(VideoReader& myVideoReader) {
+static void updateVideoFrame(VideoReader& myVideoReader) {
 	if (!myVideoReader.isFrameAvailable())
 		return;
 
@@ -138,6 +140,7 @@ int Oculus2::run(int argc, char **argv)
 
 	std::string filename = argv[2];
 	VideoReader myVideoReader(filename);
+	myVideoReader.optimizeAngle = 0;
 	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
@@ -153,6 +156,7 @@ int Oculus2::run(int argc, char **argv)
 		}
 		display();
 
+		myVideoReader.optimizeAngle = getAngleForOptimize();
 		if (!FROZEN) {
 			updateVideoFrame(myVideoReader);
 		}
@@ -452,62 +456,6 @@ void draw_scene(ovrEyeType eye)
 	glDisable(GL_TEXTURE_2D);
 	// glFrontFace(GL_CW);
 	// glPopMatrix();
-}
-
-void draw_box(float xsz, float ysz, float zsz, float norm_sign)
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-
-	glScalef(xsz * 0.5, ysz * 0.5, zsz * 0.5);
-
-	if(norm_sign < 0.0) {
-		glFrontFace(GL_CW);
-	}
-
-	glBegin(GL_QUADS);
-	glNormal3f(0, 0, 1 * norm_sign);
-	glTexCoord2f(0, 0); glVertex3f(-1, -1, 1);
-	glTexCoord2f(1, 0); glVertex3f(1, -1, 1);
-	glTexCoord2f(1, 1); glVertex3f(1, 1, 1);
-	glTexCoord2f(0, 1); glVertex3f(-1, 1, 1);
-	glNormal3f(1 * norm_sign, 0, 0);
-	glTexCoord2f(0, 0); glVertex3f(1, -1, 1);
-	glTexCoord2f(1, 0); glVertex3f(1, -1, -1);
-	glTexCoord2f(1, 1); glVertex3f(1, 1, -1);
-	glTexCoord2f(0, 1); glVertex3f(1, 1, 1);
-	glNormal3f(0, 0, -1 * norm_sign);
-	glTexCoord2f(0, 0); glVertex3f(1, -1, -1);
-	glTexCoord2f(1, 0); glVertex3f(-1, -1, -1);
-	glTexCoord2f(1, 1); glVertex3f(-1, 1, -1);
-	glTexCoord2f(0, 1); glVertex3f(1, 1, -1);
-	glNormal3f(-1 * norm_sign, 0, 0);
-	glTexCoord2f(0, 0); glVertex3f(-1, -1, -1);
-	glTexCoord2f(1, 0); glVertex3f(-1, -1, 1);
-	glTexCoord2f(1, 1); glVertex3f(-1, 1, 1);
-	glTexCoord2f(0, 1); glVertex3f(-1, 1, -1);
-	glEnd();
-	glBegin(GL_TRIANGLE_FAN);
-	glNormal3f(0, 1 * norm_sign, 0);
-	glTexCoord2f(0.5, 0.5); glVertex3f(0, 1, 0);
-	glTexCoord2f(0, 0); glVertex3f(-1, 1, 1);
-	glTexCoord2f(1, 0); glVertex3f(1, 1, 1);
-	glTexCoord2f(1, 1); glVertex3f(1, 1, -1);
-	glTexCoord2f(0, 1); glVertex3f(-1, 1, -1);
-	glTexCoord2f(0, 0); glVertex3f(-1, 1, 1);
-	glEnd();
-	glBegin(GL_TRIANGLE_FAN);
-	glNormal3f(0, -1 * norm_sign, 0);
-	glTexCoord2f(0.5, 0.5); glVertex3f(0, -1, 0);
-	glTexCoord2f(0, 0); glVertex3f(-1, -1, -1);
-	glTexCoord2f(1, 0); glVertex3f(1, -1, -1);
-	glTexCoord2f(1, 1); glVertex3f(1, -1, 1);
-	glTexCoord2f(0, 1); glVertex3f(-1, -1, 1);
-	glTexCoord2f(0, 0); glVertex3f(-1, -1, -1);
-	glEnd();
-
-	glFrontFace(GL_CCW);
-	glPopMatrix();
 }
 
 /* update_rtarg creates (and/or resizes) the render target used to draw the two stero views */

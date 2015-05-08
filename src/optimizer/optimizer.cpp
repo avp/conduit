@@ -233,3 +233,9 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
 
   return fullImage;
 }
+
+cv::Mat Optimizer::processImage(const cv::Mat& input,
+        int angle, int vAngle) {
+  OptimizedImage opt = optimizeImage(input, angle, vAngle);
+  return extractImage(opt);
+}

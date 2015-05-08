@@ -20,6 +20,7 @@ class VideoReader {
     cv::Mat getFrame();
     bool showFrame();
     bool isFrameAvailable();
+    float optimizeAngle;
 
   private:
     void bufferFrames(const std::string& filename);
