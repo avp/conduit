@@ -19,6 +19,7 @@ class VideoReader {
     VideoReader(const std::string& filename);
     cv::Mat getFrame();
     bool showFrame();
+    bool isFrameAvailable();
 
   private:
     void bufferFrames(const std::string& filename);

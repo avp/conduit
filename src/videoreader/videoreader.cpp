@@ -49,6 +49,10 @@ void VideoReader::bufferFrames(const std::string& filename) {
   }
 }
 
+bool VideoReader::isFrameAvailable() {
+  return frameQueue.size() > 0;
+}
+
 cv::Mat VideoReader::getFrame() {
   cv::Mat frame = frameQueue.dequeue();
   pthread_cond_signal(&queueCond);
