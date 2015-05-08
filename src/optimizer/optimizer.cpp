@@ -42,15 +42,15 @@ size_t OptimizedImage::size() const {
     ImageUtil::imageSize(blurredBottom);
 }
 
-int constrainAngle(int x){
-  x = x % 360;
+static inline int constrainAngle(int x){
+  x %= 360;
   if (x < 0)
     x += 360;
   ENSURES(0 <= x && x < 360);
   return x;
 }
 
-double constrainAngle(double x){
+static inline double constrainAngle(double x){
   // https://stackoverflow.com/questions/11498169/dealing-with-angle-wrap-in-c-code
   x = fmod(x,360);
   if (x < 0)
@@ -98,7 +98,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   ASSERT(0 <= focusLeftCol);
   ASSERT(focusLeftCol <= focusRightCol);
   ASSERT(focusRightCol < cropped.cols);
-  Mat focused = Mat(cropped, Range::all(), Range(focusLeftCol, focusRightCol));
+  Mat middle = Mat(cropped, Range::all(), Range(focusLeftCol, focusRightCol));
   Mat left = Mat(cropped, Range::all(), Range(0, focusLeftCol));
   Mat right = Mat(cropped, Range::all(), Range(focusRightCol, cropped.cols));
 
@@ -112,12 +112,12 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   cv::resize(right, blurredRight, smallSize);
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
-  int focusTopCol = focused.rows / 2 - focusHeight / 2;
-  int focusBottomCol = focused.rows / 2 + focusHeight / 2;
+  int focusTopCol = middle.rows / 2 - focusHeight / 2;
+  int focusBottomCol = middle.rows / 2 + focusHeight / 2;
 
-  Mat top(cropped, Range(0, focusTopCol));
-  Mat center(cropped, Range(focusTopCol, focusBottomCol));
-  Mat bottom(cropped, Range(focusBottomCol, focused.rows));
+  Mat top(middle, Range(0, focusTopCol));
+  Mat focused(middle, Range(focusTopCol, focusBottomCol));
+  Mat bottom(middle, Range(focusBottomCol, middle.rows));
 
   Mat blurredTop, blurredBottom;
   Size origVSize(top.size());
@@ -125,7 +125,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image, int angle) {
   cv::resize(top, blurredTop, smallVSize);
   cv::resize(bottom, blurredBottom, smallVSize);
 
-  OptimizedImage optImage(center,
+  OptimizedImage optImage(focused,
       blurredLeft, blurredRight,
       blurredTop, blurredBottom,
       origHSize, origVSize,
