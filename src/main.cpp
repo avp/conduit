@@ -120,7 +120,7 @@ static int optimize(int argc, char* argv[]) {
 
   std::cout << "Optimizing image..." << std::endl;
   start = Timer::time();
-  OptimizedImage optLeft = Optimizer::optimizeImage(left, 0);
+  OptimizedImage optLeft = Optimizer::optimizeImage(left, 180, 90);
   end = Timer::time();
 
   size_t beforeSize = ImageUtil::imageSize(left);

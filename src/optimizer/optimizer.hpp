@@ -8,6 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../util/imageutil.hpp"
+#include "../timer/timer.hpp"
 #include "../contracts.h"
 
 class OptimizedImage {
@@ -40,7 +41,8 @@ class OptimizedImage {
 
 class Optimizer {
   public:
-    static OptimizedImage optimizeImage(const cv::Mat& image, int angle);
+    static OptimizedImage optimizeImage(const cv::Mat& image,
+        int angle, int vAngle);
     static cv::Mat extractImage(const OptimizedImage& image);
 };
 

@@ -4,10 +4,10 @@ project(conduit)
 
 # Flags
 if (WIN32)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-STRING (REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  STRING (REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 else (WIN32)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g -Wno-deprecated")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -g -Wno-deprecated")
 endif (WIN32)
 
 # Options for output
@@ -84,10 +84,10 @@ if (WIN32)
     ${OpenCV_LIBS}/../
     ${CUDA_LIBRARIES}/../
     ${Oculus_LIBRARIES}/../
-	C:/sdl2/lib/x64
-	C:/OculusSDK/LibOVR/Lib/Windows/x64/Release/VS2013
-	C:/pthreads-w32-2-9-1-release/Pre-built.2/lib/x64
-	C:/opencv/build/x64/vc12/lib
+    C:/sdl2/lib/x64
+    C:/OculusSDK/LibOVR/Lib/Windows/x64/Release/VS2013
+    C:/pthreads-w32-2-9-1-release/Pre-built.2/lib/x64
+    C:/opencv/build/x64/vc12/lib
     )
 
   include_directories(
@@ -98,10 +98,10 @@ if (WIN32)
     ${OPENCV_INCLUDE_DIR}
     ${CUDA_INCLUDE_DIR}
     ${Oculus_INCLUDE_DIRS}
-	C:/sdl2/include
-	C:/OculusSDK/LibOVR/Include
-	C:/glm
-	C:/pthreads-w32-2-9-1-release/Pre-built.2/include
+    C:/sdl2/include
+    C:/OculusSDK/LibOVR/Include
+    C:/glm
+    C:/pthreads-w32-2-9-1-release/Pre-built.2/include
     )
 endif(WIN32)
 

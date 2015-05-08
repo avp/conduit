@@ -82,7 +82,7 @@ static float OculusZAngle = 0;
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
-	OptimizedImage opt = Optimizer::optimizeImage(input, -OculusZAngle + 180);
+	OptimizedImage opt = Optimizer::optimizeImage(input, -OculusZAngle + 180, 90);
   cv::Mat image = Optimizer::extractImage(opt);
 
   int height = image.rows;
@@ -387,7 +387,7 @@ void display()
 		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-  
+
     OVR::Quatf q(pose[eye].Orientation);
     float yaw = 0, pitch = 0, roll = 0;
     q.GetEulerAngles<OVR::Axis_Z, OVR::Axis_X, OVR::Axis_Y>(&yaw, &pitch, &roll);
