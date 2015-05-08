@@ -26,7 +26,7 @@ namespace BuildTest {
     // for fun, just print out some stats on the machine
 
     int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
+    gpuErrchk(cudaGetDeviceCount(&deviceCount));
 
     printf("---------------------------------------------------------\n");
     printf("Found %d CUDA devices\n", deviceCount);
@@ -34,7 +34,7 @@ namespace BuildTest {
     for (int i=0; i<deviceCount; i++)
     {
       cudaDeviceProp deviceProps;
-      cudaGetDeviceProperties(&deviceProps, i);
+      gpuErrchk(cudaGetDeviceProperties(&deviceProps, i));
       printf("Device %d: %s\n", i, deviceProps.name);
       printf("   SMs:        %d\n", deviceProps.multiProcessorCount);
       printf("   Global mem: %.0f MB\n",
