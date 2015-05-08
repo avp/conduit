@@ -169,7 +169,7 @@ GLuint loadTexture(const cv::Mat& image) {
   // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
   //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
   gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
-      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+	  0x1F02, GL_UNSIGNED_BYTE, image.ptr()); // TODO: fix 0x1F02 = GL_BGR
 
   glBindTexture(GL_TEXTURE_2D, 0);
   return texture;

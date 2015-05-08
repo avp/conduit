@@ -12,6 +12,7 @@ FIND_PATH(
   ${CMAKE_SOURCE_DIR}/../../LibOVR/Include
   ${CMAKE_SOURCE_DIR}/../OculusSDK/LibOVR/Include
   ${CMAKE_SOURCE_DIR}/../../OculusSDK/LibOVR/Include
+  C:/OculusSDK/LibOVR/Include
   /usr/include/LibOVR/Include
   /usr/local/include/LibOVR/Include
   /opt/local/include/LibOVR/Include
@@ -27,6 +28,8 @@ FIND_LIBRARY(
   ${CMAKE_SOURCE_DIR}/../LibOVR/Lib/Mac/Release
   ${CMAKE_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/x86_64/Release
   ${CMAKE_SOURCE_DIR}/../../LibOVR/Lib/Mac/Release
+  ${CMAKE_SOURCE_DIR}/../../LibOVR/Lib/Windows/x64/Release/VS2012
+  C:/OculusSDK/LibOVR/Lib/Windows/x64/Release/VS2012
   /usr/include/LibOVR/Lib
   /usr/local/include/LibOVR/Lib
   /opt/local/include/LibOVR/Lib

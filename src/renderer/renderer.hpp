@@ -2,7 +2,7 @@
 #define RENDERER_RENDERER_H_
 
 #include <iostream>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include <GL/glew.h>
 
@@ -19,7 +19,11 @@
 #include <OVR_CAPI_0_5_0.h>
 #include <OVR_CAPI_GL.h>
 
+#ifdef WIN32
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../util/imageutil.hpp"

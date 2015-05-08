@@ -2,10 +2,11 @@
 #define OCULUS2_OCULUS2_H_
 
 #include "../contracts.h"
+#include "../videoreader/videoreader.hpp"
 
 class Oculus2 {
   public:
-  	static int main(int argc, char **argv);
+  	static int run(int argc, char **argv);
 };
 
 #endif

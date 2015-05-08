@@ -9,7 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#ifdef WIN32
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <GL/glew.h>
 
 #ifdef WIN32
@@ -27,7 +31,6 @@
 #include <Extras/OVR_Math.h>
 
 #include "oculus2.hpp"
-#include "../videoreader/videoreader.hpp"
  #include "../optimizer/optimizer.hpp"
 
 static int init(void);
@@ -72,13 +75,19 @@ static GLuint videoTextureRight;
 static bool nextFrame = false;
 static bool three_d_enabled = true;
 const static bool FROZEN = false;
-const static int FRAMES_FOR_UPDATE = 50;
 
 static float OculusZAngle = 0;
+static bool USE_OPTIMIZER = true;
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
-	OptimizedImage opt = Optimizer::optimizeImage(input, OculusZAngle);
-  cv::Mat image = Optimizer::extractImage(opt);
+
+  cv::Mat image;
+  if (USE_OPTIMIZER) {
+  	OptimizedImage opt = Optimizer::optimizeImage(input, -(OculusZAngle + ourAngle) + 180, 90);
+  	image = Optimizer::extractImage(opt);
+  } else {
+  	image = input;
+  }
 
   int height = image.rows;
   int width = image.cols;
@@ -101,9 +110,19 @@ static void loadTexture(const GLuint texture, const cv::Mat& input) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static int videoFrameCount = 0;
+void updateVideoFrame(VideoReader& myVideoReader) {
+	if (!myVideoReader.isFrameAvailable())
+		return;
 
-int Oculus2::main(int argc, char **argv)
+	// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
+	cv::Mat image = myVideoReader.getFrame();
+	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
+	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
+	loadTexture(videoTextureLeft, left);
+	loadTexture(videoTextureRight, right);
+}
+
+int Oculus2::run(int argc, char **argv)
 {
 	if (argc < 3) {
 		std::cerr << "Usage: "
@@ -118,16 +137,12 @@ int Oculus2::main(int argc, char **argv)
 	}
 
 	std::string filename = argv[2];
-	VideoReader videoReader(filename);
-	cv::Mat image = videoReader.getFrame();
-	cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
-	cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
+	VideoReader myVideoReader(filename);
+	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
-  std::cout << "LEFT " << videoTextureLeft << " RIGHT" << videoTextureRight << "\n";
-  ASSERT(videoTextureLeft != videoTextureRight);
-	loadTexture(videoTextureLeft, left);
-	loadTexture(videoTextureRight, right);
+  	ASSERT(videoTextureLeft != videoTextureRight);
+  	updateVideoFrame(myVideoReader);
 
 	for(;;) {
 		SDL_Event ev;
@@ -138,16 +153,8 @@ int Oculus2::main(int argc, char **argv)
 		}
 		display();
 
-		if (!FROZEN && videoFrameCount++ > FRAMES_FOR_UPDATE) {
-			// TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
-			videoFrameCount = 0;
-
-			image = videoReader.getFrame();
-
-			left = cv::Mat(image, cv::Range(0, image.rows / 2));
-			right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
-			loadTexture(videoTextureLeft, left);
-			loadTexture(videoTextureRight, right);
+		if (!FROZEN) {
+			updateVideoFrame(myVideoReader);
 		}
 	}
 
@@ -163,7 +170,9 @@ int init(void)
 	unsigned int flags;
 
 	/* libovr must be initialized before we create the OpenGL context */
-	ovr_Initialize(0);
+	if (!ovr_Initialize(0)) {
+		std::cerr << "Unable to initialize OVR" << std::endl;
+	}
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
@@ -381,7 +390,7 @@ void display()
 		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-  
+
     OVR::Quatf q(pose[eye].Orientation);
     float yaw = 0, pitch = 0, roll = 0;
     q.GetEulerAngles<OVR::Axis_Z, OVR::Axis_X, OVR::Axis_Y>(&yaw, &pitch, &roll);

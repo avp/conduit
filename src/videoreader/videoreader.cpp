@@ -6,9 +6,10 @@ using cv::Mat;
 using cv::gpu::GpuMat;
 using cv::gpu::VideoReader_GPU;
 
-VideoReader::VideoReader(std::string filename) {
+VideoReader::VideoReader(const std::string& filename) {
   if (cv::gpu::getCudaEnabledDeviceCount() > 10) {
     useGpu = true;
+    std::cout << "Using GPU" << std::endl;
     // cv::gpu::setGlDevice();
     cv::gpu::setDevice(0);
     cv::gpu::DeviceInfo info(0);
@@ -19,14 +20,22 @@ VideoReader::VideoReader(std::string filename) {
     }
   } else {
     useGpu = false;
+    std::cout << "Not using GPU" << std::endl;
     videoCapture.open(filename);
     if (!videoCapture.isOpened()) {
       std::cerr << "CPU: Failed to open file " << filename << std::endl;
       std::exit(1);
     }
   }
-  framesCaptured = 0;
+
   windowCreated = false;
+  fullyBuffered = false;
+
+  pthread_cond_init(&queueCond, NULL);
+  pthread_mutex_init(&queueLock, NULL);
+
+  bufferThread = std::thread(&VideoReader::bufferFrames, this, filename);
+  bufferThread.detach();
 }
 
 GpuMat VideoReader::getGpuFrame() {
@@ -43,23 +52,49 @@ GpuMat VideoReader::getGpuFrame() {
   return frame;
 }
 
-Mat VideoReader::getFrame() {
-  Mat frame;
-  videoCapture >> frame;
+void VideoReader::bufferFrames(const std::string& filename) {
+  int framesBuffered = 0;
   int framesDropped = 0;
-  while (framesCaptured == 0 && frame.empty() && framesDropped++ < MAX_FRAMES_TO_DROP) {
+  while (framesBuffered < 1000) {
+    if (frameQueue.size() > 10) {
+      pthread_mutex_lock(&queueLock);
+      pthread_cond_wait(&queueCond, &queueLock);
+      pthread_mutex_unlock(&queueLock);
+    }
+    cv::Mat frame;
     videoCapture >> frame;
-    std::cout << "First frame empty. Trying again..." << std::endl;
+    bool hadError = false;
+    while (framesBuffered == 0 && frame.empty() && framesDropped++ < MAX_FRAMES_TO_DROP) {
+      videoCapture >> frame;
+      std::cout << "First frame empty. Trying again..." << std::endl;
+      hadError = true;
+    }
+    if (hadError && !frame.empty()) {
+      std::cout << "First frame retrieved successfully." << std::endl;
+    }
+
+    framesBuffered++;
+    frameQueue.enqueue(frame);
+    if (frame.empty()) {
+      fullyBuffered = true;
+      return;
+    }
   }
-  if (!frame.empty()) {
-    framesCaptured++;
-  }
+}
+
+bool VideoReader::isFrameAvailable() {
+  return frameQueue.size() > 0;
+}
+
+cv::Mat VideoReader::getFrame() {
+  cv::Mat frame = frameQueue.dequeue();
+  pthread_cond_signal(&queueCond);
   return frame;
 }
 
 bool VideoReader::showFrame() {
   if (!windowCreated) {
-    cv::namedWindow(WINDOW_NAME, CV_WINDOW_AUTOSIZE);
+    cv::namedWindow(WINDOW_NAME, CV_WINDOW_NORMAL);
     windowCreated = true;
   }
 
