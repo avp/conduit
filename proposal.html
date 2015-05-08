@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="description" content="Oculus Render : 15-418 Final Project">
+
+  <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+  <title>Conduit</title>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="header_wrap" class="outer">
+  <header class="inner">
+    <a id="forkme_banner" href="https://github.com/avp/conduit">View on GitHub</a>
+
+    <h1 id="project_title">Conduit</h1>
+
+    <h2 id="project_tagline">Aakash Patel &amp; Gregory Rose</h2>
+
+    <section id="downloads">
+      <a class="zip_download_link" href="https://github.com/avp/conduit/zipball/master">
+        Download this project as a .zip file
+      </a>
+      <a class="tar_download_link" href="https://github.com/avp/conduit/tarball/master">
+        Download this project as a tar.gz file
+      </a>
+    </section>
+  </header>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main_content_wrap" class="outer">
+  <section id="main_content" class="inner">
+    <h2>Proposal</h2>
+
+    <h3>Summary</h3>
+
+    <p>
+      Conduit is a project to reduce bandwidth requirements for streaming live 4K panoramic video to a HMD (head-mounted display, e.g. Oculus Rift). To do this, we will take advantage of the fact that the human eye has a much higher resolution in the center than in the outside, and transcode video on the outer part of your vision at a lower quality. Our goal is to do this with minimal latency, and maximum stream-per-system performance.
+    </p>
+
+    <h3>Background</h3>
+    <!-- TODO: I've added a few details, but there's definitely more to say -Greg -->
+    <!-- TODO: These are the words to use, but we might want to add some formatting -->
+
+    <h4>Definitions</h4>
+
+    <p>
+      <strong>Source video:</strong>
+      The original raw 4K panoramic video stream we want to make available through HMDs.
+    </p>
+
+    <p>
+      <strong>View-optimized video:</strong>
+      The source video, cropped to show just the parts the user is looking at (plus some padding if they move).
+      This is optimized to display lower quality video to lower resolution parts of the human eye.
+    </p>
+
+    <p>
+      <strong>HMD video:</strong>
+      The video cropped to just the part the HMD is looking at, re-projected for both eyes, and formatted via barrel distortion for the Oculus.
+    </p>
+
+    <p>
+      <strong>Client:</strong>
+      A personal computer or phone receiving the video stream,
+      and performing some processing on the stream.
+    </p>
+
+    <h4>Project</h4>
+
+    <p>
+      This project revolves around the idea of a bandwidth-latency tradeoff, a challenge in parallelizing programs. We spend extra time processing the video to make it smaller, in order to reduce bandwidth requirements.
+    </p>
+
+    <p>
+      The naive approach to getting streaming VR video would be to stream the entire 4K source video, and process it on the client.
+      However, <a href="https://help.netflix.com/en/node/13444">Netflix recommends</a>
+      an Internet connection speed of 25 Mbps for streaming a 4K video.
+      According to Akamai, the average American internet speed is about 10 Mbps.
+      In addition, while 4G internet can get almost to the 4K streaming point,
+      <a href="https://bgr.com/2013/03/11/4g-network-speeds-368339/">at 20 Mbps down</a>,
+      on average it's a lot lower.
+      Mobile networks aren't built to handle <i>everyone</i> using that much data all the time.
+    </p>
+
+    <p>
+      If this technique is successful (and fully realizing it goes well beyond the scope of this project),
+      it may make it practical to attend events live performances and events like concerts and sports games in VR,
+      even from a mobile device, by reducing the bandwidth requirement.
+    </p>
+
+    <h3>Challenge</h3>
+
+    <p>
+      There are many challenges to this project. First, neither of us have worked with developing low-level code for VR, or video streaming and video codecs. So we'll have to learn how to do that, and how to process streaming video in parallel.
+
+      Additionally, at its core, we're exploring the challenge of a bandwidth-latency tradeoff, which is a real issue in developing parallel programs.
+
+      The challenge is highly scalable, in that if we are able to finish all of our goals early, there are many different ways to optimize the video.
+    </p>
+
+    <h4>Workload</h4>
+    <p>
+      In terms of dependencies, within a single frame, pixels in the rendering. However, in a blur filter, a pixel's new value depends on the surrounding ones.
+      We're mostly depending on getting HMD data, and also depending on the streaming video to come in.
+    </p>
+
+    <p>
+      We'll use both a lot of bandwidth, and a lot of compute, as 4K video contains a lot of data, and video compression does a lot of work with that data.
+      On the client side, it is fundamentally a rendering problem, which can be done well in parallel.
+    </p>
+
+    <h4>Constraints</h4>
+
+    <p>
+      During the video processing phase, we don't split the video into nice rectangular partitions, but irregular shapes that overlap, and possibly cause false sharing.
+      The largest constraint is the performance requirement that we need to have very low latency to be comfortable for people to use.
+    </p>
+
+    <h3>Resources</h3>
+
+    <p>
+      We'll start from scratch, but ultimately probably need to use video compression libraries.
+      We'll use the Oculus SDK. Oculus also has C++ example code for a scene in case we get stuck.
+    </p>
+
+    <h3>Goals &amp; Deliverables</h3>
+
+    <h4>Plans</h4>
+
+    <p>
+      For the initial product, we won't use a separate client and server.
+      All computation will be done on the same machine for simplicity.
+    </p>
+
+    <p>We plan to:</p>
+    <ul>
+      <li>
+        Render the panoramic video to the Oculus in real time.
+        It has to be real time because any latency makes viewing uncomfortable.
+        This should be achievable because we are only rendering one cylinder and we can hardcode the math.
+      </li>
+      <li>
+        View optimize the stream by cropping and blurring to reduce resolution and bitrate in unfocused regions for the eye.
+        This should be possible because a simple blur filter is straightforward.
+      </li>
+    </ul>
+
+    <p>We hope to:</p>
+    <ul>
+      <li>
+        Implement more advanced view optimizations.
+      </li>
+      <li>
+        Separate the program into client and server.
+      </li>
+    </ul>
+
+    <h4>Demo</h4>
+
+    <p>We plan to:</p>
+    <ul>
+      <li>
+        Show a demo of the video being rendered in real time on the Oculus, along with log statements showing how much bandwidth would be used.
+      </li>
+      <li>
+        We will also give results of the bandwidth we were able to achieve, as well as speedup we got rendering.
+      </li>
+    </ul>
+
+    <h3>Platform Choice</h3>
+
+    <p>
+      For initial development and debugging, we'll be running the code on our laptops with discrete mobile graphics cards.
+      For performance testing and benchmarking, we can use the graphics processors on the Gates machines for better results.
+      We plan to use CUDA for running our code on the graphics cards.
+      <!--  TODO Investigate latedays hardware -->
+    </p>
+
+    <h3>Schedule</h3>
+
+    <p>
+      Each week ends at the end of Saturday.
+      For example, week 1 is due on April 11, 23:59.
+    </p>
+
+    <p>
+      <strong>Week 1:</strong>
+      Find suitable video decoder, and get it to work.
+      Set up Oculus SDK on a simple scene.
+    </p>
+    <p>
+      <strong>Week 2:</strong>
+      Finish video renderer and cylinder warp program.
+      Start writing the video renderer and cylinder warp.
+      Draw a procedurally generated cylinder using sequential code.
+      Write the project checkpoint writeup, due Thursday, April 16.
+    </p>
+    <p>
+      <strong>Week 3:</strong>
+      Implement basic blurring and view optimization.
+    </p>
+    <p>
+      <strong>Week 4:</strong>
+      Improve view optimization for lower bandwidth usage.
+      Implement server-client dichotomy for streaming video.
+    </p>
+    <p>
+      <strong>Week 5:</strong>
+      Prepare for presentation and final improvements, bug fixes, and tuning.
+      Prepare final writeup.
+    </p>
+  </section>
+</div>
+
+<!-- FOOTER  -->
+<div id="footer_wrap" class="outer">
+  <footer class="inner">
+    <p class="copyright">
+      Conduit maintained by
+      <a href="https://github.com/avp">avp</a>
+      and
+      <a href="https://github.com/grrosegr">grrosegr</a>
+    </p>
+  </footer>
+</div>
+
+</body>
+</html>
