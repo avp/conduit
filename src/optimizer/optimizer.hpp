@@ -19,22 +19,14 @@ class OptimizedImage {
 
   private:
     OptimizedImage(const cv::Mat& focused,
-        const cv::Mat& blurredLeft,
-        const cv::Mat& blurredRight,
-        const cv::Mat& blurredTop,
-        const cv::Mat& blurredBottom,
-        cv::Size origHSize,
-        cv::Size origVSize,
-        cv::Size fullSize,
-        int leftBuffer);
+        const cv::Mat& blurred,
+        int focusRow, int focusCol,
+        cv::Size fullSize, int leftBuffer);
 
     cv::Mat focused;
-    cv::Mat blurredLeft;
-    cv::Mat blurredRight;
-    cv::Mat blurredTop;
-    cv::Mat blurredBottom;
-    cv::Size origHSize;
-    cv::Size origVSize;
+    cv::Mat blurred;
+    int focusRow;
+    int focusCol;
     cv::Size fullSize;
     int leftBuffer;
 };

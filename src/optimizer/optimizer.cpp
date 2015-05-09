@@ -13,32 +13,21 @@ static const int H_FOCUS_ANGLE = 30;
 static const int V_FOCUS_ANGLE = 30;
 static const int BLUR_FACTOR = 3;
 
-OptimizedImage::OptimizedImage(const Mat& focused,
-    const Mat& blurredLeft,
-    const Mat& blurredRight,
-    const Mat& blurredTop,
-    const Mat& blurredBottom,
-    Size origHSize,
-    Size origVSize,
-    Size fullSize,
-    int leftBuffer) {
+OptimizedImage::OptimizedImage(const cv::Mat& focused,
+    const cv::Mat& blurred,
+    int focusRow, int focusCol,
+    Size fullSize, int leftBuffer) {
   this->focused = Mat(focused);
-  this->blurredLeft = Mat(blurredLeft);
-  this->blurredRight = Mat(blurredRight);
-  this->blurredTop = Mat(blurredTop);
-  this->blurredBottom = Mat(blurredBottom);
-  this->origHSize = origHSize;
-  this->origVSize = origVSize;
+  this->blurred = Mat(blurred);
+  this->focusRow = focusRow;
+  this->focusCol = focusCol;
   this->fullSize = fullSize;
   this->leftBuffer = leftBuffer;
 }
 
 size_t OptimizedImage::size() const {
   return ImageUtil::imageSize(focused) +
-    ImageUtil::imageSize(blurredLeft) +
-    ImageUtil::imageSize(blurredRight) +
-    ImageUtil::imageSize(blurredTop) +
-    ImageUtil::imageSize(blurredBottom);
+    ImageUtil::imageSize(blurred);
 }
 
 static inline int constrainAngle(int x) {
@@ -118,20 +107,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   ASSERT(focusLeftCol <= focusRightCol);
   ASSERT(focusRightCol < cropped.cols);
   Mat middle = Mat(cropped, Range::all(), Range(focusLeftCol, focusRightCol));
-  Mat left = Mat(cropped, Range::all(), Range(0, focusLeftCol));
-  Mat right = Mat(cropped, Range::all(), Range(focusRightCol, cropped.cols));
   timer.stop("Splitting (H)");
-
-  Size origHSize(left.size());
-
-  Mat blurredLeft = left;
-  Mat blurredRight = right;
-
-  timer.start();
-  Size smallSize(left.cols / BLUR_FACTOR, left.rows / BLUR_FACTOR);
-  cv::resize(left, blurredLeft, smallSize);
-  cv::resize(right, blurredRight, smallSize);
-  timer.stop("Blurring (H)");
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
   int focusMiddleRow = clamp(vAngle * angleToHeight,
@@ -140,26 +116,24 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   int focusBottomRow = focusMiddleRow + focusHeight / 2;
 
   timer.start();
-  Mat top(middle, Range(0, focusTopRow));
   Mat focused(middle, Range(focusTopRow, focusBottomRow));
-  Mat bottom(middle, Range(focusBottomRow, middle.rows));
   timer.stop("Splitting (V)");
 
-  timer.start();
-  Mat blurredTop, blurredBottom;
-  Size origVSize(top.size());
-  Size smallVSize(top.cols / BLUR_FACTOR, top.rows / BLUR_FACTOR);
-  cv::resize(top, blurredTop, smallVSize);
-  cv::resize(bottom, blurredBottom, smallVSize);
-  timer.stop("Blurring (V)");
+  Size smallSize(cropped.cols / BLUR_FACTOR, cropped.rows / BLUR_FACTOR);
+  Size origSize(cropped.cols, cropped.rows);
 
-  OptimizedImage optImage(focused,
-      blurredLeft, blurredRight,
-      blurredTop, blurredBottom,
-      origHSize, origVSize,
+  timer.start();
+  Mat small, blurred;
+  cv::resize(cropped, small, smallSize);
+  cv::resize(small, blurred, origSize);
+  timer.stop("Blurring");
+
+  OptimizedImage optImage(focused, blurred,
+      focusTopRow, focusLeftCol,
       image.size(), leftCol);
   return optImage;
 }
+
 
 static Mat uncropWrapped(const Mat& croppedImage, const int fullWidth, const int leftBuffer) {
   int numRows = croppedImage.size().height;
@@ -212,27 +186,17 @@ static Mat uncropWrapped(const Mat& croppedImage, const int fullWidth, const int
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Timer timer;
 
-  Mat left, right, top, bottom;
+  Mat croppedImage = Mat(optImage.blurred);
 
   timer.start();
-  cv::resize(optImage.blurredLeft, left, optImage.origHSize);
-  cv::resize(optImage.blurredRight, right, optImage.origHSize);
-  timer.stop("Resizing (H)");
-
-  timer.start();
-  cv::resize(optImage.blurredTop, top, optImage.origVSize);
-  cv::resize(optImage.blurredBottom, bottom, optImage.origVSize);
-  timer.stop("Resizing (V)");
-
-  timer.start();
-  // Reconstruct middle image
-  Mat middle;
-  ImageUtil::vconcat3(top, optImage.focused, bottom, middle);
-
-  // Reconstruct cropped image
-  Mat croppedImage;
-  ImageUtil::hconcat3(left, middle, right, croppedImage);
+  Mat tmp = croppedImage(
+      Range(optImage.focusRow, optImage.focusRow + optImage.focused.rows),
+      Range(optImage.focusCol, optImage.focusCol + optImage.focused.cols));
+  optImage.focused.copyTo(tmp);
   timer.stop("Reconstructing");
+
+  // Reconstruct middle image
+  Mat fullLeft, fullCenter, fullRight;
 
   timer.start();
   Mat fullImage = uncropWrapped(croppedImage, optImage.fullSize.width, optImage.leftBuffer);

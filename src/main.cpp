@@ -112,7 +112,7 @@ static int optimize(int argc, char* argv[]) {
   cv::Mat left, extractedLeft;
   Timer timer;
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 1; i++) {
     std::cout << "\nFrame " << i << std::endl;
 
     timer.start();
@@ -143,11 +143,11 @@ static int optimize(int argc, char* argv[]) {
     timer.stop("Time");
   }
 
-  cv::namedWindow("Before", CV_WINDOW_NORMAL);
-  cv::imshow("Before", left);
+  // cv::namedWindow("Before", CV_WINDOW_NORMAL);
+  // cv::imshow("Before", left);
 
-  cv::namedWindow("After", CV_WINDOW_NORMAL);
-  cv::imshow("After", extractedLeft);
+  // cv::namedWindow("After", CV_WINDOW_NORMAL);
+  // cv::imshow("After", extractedLeft);
 
   cv::waitKey(0);
   return 0;
