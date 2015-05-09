@@ -186,7 +186,10 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Timer timer;
 
   Mat croppedImage;
+
+  timer.start();
   cv::resize(optImage.blurred, croppedImage, optImage.croppedSize);
+  timer.stop("Expanding");
 
   timer.start();
   Mat tmp = croppedImage(
