@@ -108,7 +108,6 @@ static int optimize(int argc, char* argv[]) {
   }
   std::string filename = argv[2];
   VideoReader videoReader(filename);
-  double start, end;
 
   cv::Mat left, extractedLeft;
   Timer timer;
