@@ -41,7 +41,7 @@ size_t OptimizedImage::size() const {
     ImageUtil::imageSize(blurredBottom);
 }
 
-static inline int constrainAngle(int x){
+static inline int constrainAngle(int x) {
   x %= 360;
   if (x < 0)
     x += 360;
@@ -49,7 +49,7 @@ static inline int constrainAngle(int x){
   return x;
 }
 
-static inline double constrainAngle(double x){
+static inline double constrainAngle(double x) {
   // https://stackoverflow.com/questions/11498169/dealing-with-angle-wrap-in-c-code
   x = fmod(x,360);
   if (x < 0)
@@ -84,7 +84,7 @@ static Mat cropHorizontallyWrapped(const Mat& image, const int leftCol, const in
 
 OptimizedImage Optimizer::optimizeImage(const Mat& image,
     int angle, int vAngle) {
-  double start, end;
+  Timer timer;
 
   angle = constrainAngle(angle);
   REQUIRES(H_FOCUS_ANGLE < CROP_ANGLE);
@@ -104,37 +104,34 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   ASSERT(0 <= rightCol);
   ASSERT(rightCol < width);
 
-  start = Timer::time();
+  timer.start();
   Mat cropped = cropHorizontallyWrapped(image, leftCol, rightCol);
-  end = Timer::time();
-  // std::cout << "Cropping: " << end - start << " ms" << std::endl;
+  timer.stop("Cropping");
 
   int focusWidth = H_FOCUS_ANGLE * angleToWidth;
 
   int focusLeftCol = cropped.cols / 2 - focusWidth / 2;
   int focusRightCol = cropped.cols / 2 + focusWidth / 2;
 
-  start = Timer::time();
+  timer.start();
   ASSERT(0 <= focusLeftCol);
   ASSERT(focusLeftCol <= focusRightCol);
   ASSERT(focusRightCol < cropped.cols);
   Mat middle = Mat(cropped, Range::all(), Range(focusLeftCol, focusRightCol));
   Mat left = Mat(cropped, Range::all(), Range(0, focusLeftCol));
   Mat right = Mat(cropped, Range::all(), Range(focusRightCol, cropped.cols));
-  end = Timer::time();
-  // std::cout << "Splitting (H): " << end - start << " ms" << std::endl;
+  timer.stop("Splitting (H)");
 
   Size origHSize(left.size());
 
   Mat blurredLeft = left;
   Mat blurredRight = right;
 
-  start = Timer::time();
+  timer.start();
   Size smallSize(left.cols / BLUR_FACTOR, left.rows / BLUR_FACTOR);
   cv::resize(left, blurredLeft, smallSize);
   cv::resize(right, blurredRight, smallSize);
-  end = Timer::time();
-  // std::cout << "Blurring (H): " << end - start << " ms" << std::endl;
+  timer.stop("Blurring (H)");
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
   int focusMiddleRow = clamp(vAngle * angleToHeight,
@@ -142,21 +139,19 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   int focusTopRow = focusMiddleRow - focusHeight / 2;
   int focusBottomRow = focusMiddleRow + focusHeight / 2;
 
-  start = Timer::time();
+  timer.start();
   Mat top(middle, Range(0, focusTopRow));
   Mat focused(middle, Range(focusTopRow, focusBottomRow));
   Mat bottom(middle, Range(focusBottomRow, middle.rows));
-  end = Timer::time();
-  // std::cout << "Splitting (V): " << end - start << " ms" << std::endl;
+  timer.stop("Splitting (V)");
 
-  start = Timer::time();
+  timer.start();
   Mat blurredTop, blurredBottom;
   Size origVSize(top.size());
   Size smallVSize(top.cols / BLUR_FACTOR, top.rows / BLUR_FACTOR);
   cv::resize(top, blurredTop, smallVSize);
   cv::resize(bottom, blurredBottom, smallVSize);
-  end = Timer::time();
-  // std::cout << "Blurring (V): " << end - start << " ms" << std::endl;
+  timer.stop("Blurring (V)");
 
   OptimizedImage optImage(focused,
       blurredLeft, blurredRight,
@@ -215,22 +210,21 @@ static Mat uncropWrapped(const Mat& croppedImage, const int fullWidth, const int
 }
 
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
-  double start, end;
+  Timer timer;
+
   Mat left, right, top, bottom;
 
-  start = Timer::time();
+  timer.start();
   cv::resize(optImage.blurredLeft, left, optImage.origHSize);
   cv::resize(optImage.blurredRight, right, optImage.origHSize);
-  end = Timer::time();
-  // std::cout << "Resizing (H): " << end - start << " ms" << std::endl;
+  timer.stop("Resizing (H)");
 
-  start = Timer::time();
+  timer.start();
   cv::resize(optImage.blurredTop, top, optImage.origVSize);
   cv::resize(optImage.blurredBottom, bottom, optImage.origVSize);
-  end = Timer::time();
-  // std::cout << "Resizing (V): " << end - start << " ms" << std::endl;
+  timer.stop("Resizing (V)");
 
-  start = Timer::time();
+  timer.start();
   // Reconstruct middle image
   Mat middle;
   ImageUtil::vconcat3(top, optImage.focused, bottom, middle);
@@ -238,13 +232,11 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   // Reconstruct cropped image
   Mat croppedImage;
   ImageUtil::hconcat3(left, middle, right, croppedImage);
-  end = Timer::time();
-  // std::cout << "Reconstructing: " << end - start << " ms" << std::endl;
+  timer.stop("Reconstructing");
 
-  start = Timer::time();
+  timer.start();
   Mat fullImage = uncropWrapped(croppedImage, optImage.fullSize.width, optImage.leftBuffer);
-  end = Timer::time();
-  // std::cout << "Full image: " << end - start << " ms" << std::endl;
+  timer.stop("Full image");
 
   ENSURES(fullImage.size() == optImage.fullSize);
 

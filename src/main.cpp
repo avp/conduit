@@ -111,14 +111,14 @@ static int optimize(int argc, char* argv[]) {
   double start, end;
 
   cv::Mat left, extractedLeft;
+  Timer timer;
 
   for (int i = 0; i < 5; i++) {
     std::cout << "\nFrame " << i << std::endl;
 
-    start = Timer::time();
+    timer.start();
     cv::Mat image = cv::Mat(videoReader.getFrame());
-    end = Timer::time();
-    std::cout << "Get frame: " << end - start << " ms" << std::endl;
+    timer.stop("Get frame");
 
     if (image.empty()) {
       std::cout << "No frames left to show." << std::endl;
@@ -128,22 +128,20 @@ static int optimize(int argc, char* argv[]) {
     left = cv::Mat(image, cv::Range(0, image.rows / 2));
 
     std::cout << "Optimizing image..." << std::endl;
-    start = Timer::time();
+    timer.start();
     OptimizedImage optLeft = Optimizer::optimizeImage(left, 180, 90);
-    end = Timer::time();
+    timer.stop("Time");
 
     size_t beforeSize = ImageUtil::imageSize(left);
     size_t afterSize = optLeft.size();
     double ratio = ((double) afterSize) / ((double) beforeSize) * 100.0;
     std::cout << "Optimized: " << beforeSize << " -> " << afterSize << std::endl;
     std::cout << "Ratio:     " << ratio << "%" << std::endl;
-    std::cout << "Time:      " << end - start << " ms" << std::endl;
 
     std::cout << "Extracting image..." << std::endl;
-    start = Timer::time();
+    timer.start();
     extractedLeft = Optimizer::extractImage(optLeft);
-    end = Timer::time();
-    std::cout << "Time:      " << end - start << " ms" << std::endl;
+    timer.stop("Time");
   }
 
   cv::namedWindow("Before", CV_WINDOW_NORMAL);
