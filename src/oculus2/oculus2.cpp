@@ -156,7 +156,12 @@ int Oculus2::run(int argc, char **argv)
 	ASSERT(videoTextureLeft != videoTextureRight);
 	updateVideoFrame(myVideoReader);
 
+	int frameNum = 1;
+	FramerateProfiler profiler;
+
 	for(;;) {
+		profiler.startFrame();
+
 		SDL_Event ev;
 		while(SDL_PollEvent(&ev)) {
 			if(handle_event(&ev) == -1) {
@@ -168,6 +173,13 @@ int Oculus2::run(int argc, char **argv)
 		myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
 		if (!FROZEN) {
 			updateVideoFrame(myVideoReader);
+		}
+
+		profiler.finishFrame();
+
+		frameNum = (frameNum + 1) % 10;
+		if (frameNum == 0) {
+			std::cout << profiler.getFramerate() << " FPS headtracking" << std::endl;
 		}
 	}
 
