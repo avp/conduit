@@ -58,6 +58,10 @@ static inline double constrainAngle(double x){
   return x;
 }
 
+static inline int clamp(int x, int lo, int hi) {
+  return std::max(lo, std::min(x, hi));
+}
+
 static Mat cropHorizontallyWrapped(const Mat& image, const int leftCol, const int rightCol) {
   REQUIRES(0 <= leftCol && leftCol < image.cols);
   REQUIRES(0 <= rightCol && rightCol < image.cols);
@@ -133,7 +137,8 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   // std::cout << "Blurring (H): " << end - start << " ms" << std::endl;
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
-  int focusMiddleRow = vAngle * angleToHeight;
+  int focusMiddleRow = clamp(vAngle * angleToHeight,
+      focusHeight / 2, image.rows - focusHeight / 2);
   int focusTopRow = focusMiddleRow - focusHeight / 2;
   int focusBottomRow = focusMiddleRow + focusHeight / 2;
 
