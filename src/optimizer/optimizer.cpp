@@ -16,11 +16,12 @@ static const int BLUR_FACTOR = 2;
 OptimizedImage::OptimizedImage(const cv::Mat& focused,
     const cv::Mat& blurred,
     int focusRow, int focusCol,
-    Size fullSize, int leftBuffer) {
+    Size croppedSize, Size fullSize, int leftBuffer) {
   this->focused = Mat(focused);
   this->blurred = Mat(blurred);
   this->focusRow = focusRow;
   this->focusCol = focusCol;
+  this->croppedSize = croppedSize;
   this->fullSize = fullSize;
   this->leftBuffer = leftBuffer;
 }
@@ -120,17 +121,15 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   timer.stop("Splitting (V)");
 
   Size smallSize(cropped.cols / BLUR_FACTOR, cropped.rows / BLUR_FACTOR);
-  Size origSize(cropped.cols, cropped.rows);
 
   timer.start();
-  Mat small, blurred;
-  cv::resize(cropped, small, smallSize);
-  cv::resize(small, blurred, origSize);
+  Mat blurred;
+  cv::resize(cropped, blurred, smallSize);
   timer.stop("Blurring");
 
   OptimizedImage optImage(focused, blurred,
       focusTopRow, focusLeftCol,
-      image.size(), leftCol);
+      cropped.size(), image.size(), leftCol);
   return optImage;
 }
 
@@ -186,7 +185,8 @@ static Mat uncropWrapped(const Mat& croppedImage, const int fullWidth, const int
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Timer timer;
 
-  Mat croppedImage = Mat(optImage.blurred);
+  Mat croppedImage;
+  cv::resize(optImage.blurred, croppedImage, optImage.croppedSize);
 
   timer.start();
   Mat tmp = croppedImage(

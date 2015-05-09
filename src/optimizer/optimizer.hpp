@@ -21,12 +21,13 @@ class OptimizedImage {
     OptimizedImage(const cv::Mat& focused,
         const cv::Mat& blurred,
         int focusRow, int focusCol,
-        cv::Size fullSize, int leftBuffer);
+        cv::Size croppedSize, cv::Size fullSize, int leftBuffer);
 
     cv::Mat focused;
     cv::Mat blurred;
     int focusRow;
     int focusCol;
+    cv::Size croppedSize;
     cv::Size fullSize;
     int leftBuffer;
 };
