@@ -21,6 +21,15 @@ size_t ImageUtil::imageSize(const cv::Mat& image) {
   return image.total() * image.elemSize();
 }
 
+void ImageUtil::hconcat2(const Mat& m1, const Mat& m2, Mat& dst) {
+  if (m1.empty())
+    dst = m2;
+  else if (m2.empty())
+    dst = m1;
+  else
+    hconcat(m1, m2, dst);
+}
+
 void ImageUtil::hconcat3(const Mat& m1, const Mat& m2, const Mat& m3,
     Mat& dst) {
   int num_empty = 0;

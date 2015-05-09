@@ -528,45 +528,41 @@ int handle_event(SDL_Event *ev)
 
 int key_event(int key, int state)
 {
-	if (state) {
-		switch( key ){
-			case SDLK_LEFT:
-			case SDLK_a:
-				xPos -= 1;
-				break;
-			case SDLK_RIGHT:
-			case SDLK_d:
-				xPos += 1;
-				break;
-			case SDLK_UP:
-			case SDLK_w:
-				zPos += 1;
-				break;
-			case SDLK_DOWN:
-			case SDLK_s:
-				zPos -= 1;
-				break;
-			case SDLK_q:
-				ourAngle += ROTATION_GRANULARITY;
-				break;
-			case SDLK_e:
-				ourAngle -= ROTATION_GRANULARITY;
-				break;
+	if (!state)
+		return 0;
 
-			default:
-				break;
-		}
+	ovrHSWDisplayState hsw;
+	ovrHmd_GetHSWDisplayState(hmd, &hsw);
+	if(hsw.Displayed) {
+		ovrHmd_DismissHSWDisplay(hmd);
+		std::cout << "Dismissing display..." << std::endl;
+		return 0;
 	}
 
+	switch( key ){
+		case SDLK_LEFT:
+		case SDLK_a:
+			xPos -= 1;
+			break;
+		case SDLK_RIGHT:
+		case SDLK_d:
+			xPos += 1;
+			break;
+		case SDLK_UP:
+		case SDLK_w:
+			zPos += 1;
+			break;
+		case SDLK_DOWN:
+		case SDLK_s:
+			zPos -= 1;
+			break;
+		case SDLK_q:
+			ourAngle += ROTATION_GRANULARITY;
+			break;
+		case SDLK_e:
+			ourAngle -= ROTATION_GRANULARITY;
+			break;
 
-	if(state) {
-		ovrHSWDisplayState hsw;
-		ovrHmd_GetHSWDisplayState(hmd, &hsw);
-		if(hsw.Displayed) {
-			ovrHmd_DismissHSWDisplay(hmd);
-		}
-
-		switch(key) {
 		case 27:
 			return -1;
 
@@ -617,8 +613,8 @@ int key_event(int key, int state)
 
 		default:
 			break;
-		}
 	}
+
 	return 0;
 }
 
