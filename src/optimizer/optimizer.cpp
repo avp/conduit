@@ -115,7 +115,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   int focusTopRow = focusMiddleRow - focusHeight / 2;
   int focusBottomRow = focusMiddleRow + focusHeight / 2;
 
-  start = Timer::time();
+  timer.start();
   Mat focused(middle, Range(focusTopRow, focusBottomRow));
   timer.stop("Splitting (V)");
 
