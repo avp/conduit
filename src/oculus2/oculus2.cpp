@@ -32,6 +32,7 @@
 
 #include "oculus2.hpp"
 #include "../optimizer/optimizer.hpp"
+#include "../settings.hpp"
 
 static int init(void);
 static void cleanup(void);
@@ -78,19 +79,24 @@ const static bool FROZEN = false;
 const static int ROTATION_GRANULARITY = 20;
 
 static float OculusZAngle = 0;
+static float OculusPitchAngle = 0;
 static bool USE_OPTIMIZER = true;
 
-static inline float getAngleForOptimize() {
+static inline float getHorizontalAngleForOptimize() {
 	return -(OculusZAngle + ourAngle) + 180;
+}
+
+static inline float getVerticalAngleForOptimize() {
+	return 90 - PITCH_MULTIPLIER * OculusPitchAngle;
 }
 
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
   cv::Mat image;
   if (USE_OPTIMIZER) {
-  	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
+	image = Optimizer::processImage(input, getHorizontalAngleForOptimize(), getVerticalAngleForOptimize());
   } else {
-  	image = input;
+	image = input;
   }
 
   int height = image.rows;
@@ -106,7 +112,7 @@ static void loadTexture(const GLuint texture, const cv::Mat& input) {
   // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
   //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
   glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0,
-      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+	  GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
 
   // gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
   //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
@@ -147,8 +153,8 @@ int Oculus2::run(int argc, char **argv)
 	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
-  	ASSERT(videoTextureLeft != videoTextureRight);
-  	updateVideoFrame(myVideoReader);
+	ASSERT(videoTextureLeft != videoTextureRight);
+	updateVideoFrame(myVideoReader);
 
 	for(;;) {
 		SDL_Event ev;
@@ -159,7 +165,7 @@ int Oculus2::run(int argc, char **argv)
 		}
 		display();
 
-		myVideoReader.optimizeAngle = getAngleForOptimize();
+		myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
 		if (!FROZEN) {
 			updateVideoFrame(myVideoReader);
 		}
@@ -398,10 +404,11 @@ void display()
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-    OVR::Quatf q(pose[eye].Orientation);
-    float yaw = 0, pitch = 0, roll = 0;
-    q.GetEulerAngles<OVR::Axis_Z, OVR::Axis_X, OVR::Axis_Y>(&yaw, &pitch, &roll);
-    OculusZAngle = roll * MATH_DOUBLE_RADTODEGREEFACTOR;
+		OVR::Quatf q(pose[eye].Orientation);
+		float yaw = 0, pitch = 0, roll = 0;
+		q.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
+		OculusZAngle = yaw * MATH_DOUBLE_RADTODEGREEFACTOR;
+		OculusPitchAngle = pitch * MATH_DOUBLE_RADTODEGREEFACTOR;
 
 		glTranslatef(eye_rdesc[eye].HmdToEyeViewOffset.x,
 				eye_rdesc[eye].HmdToEyeViewOffset.y,
@@ -535,7 +542,6 @@ int key_event(int key, int state)
 	ovrHmd_GetHSWDisplayState(hmd, &hsw);
 	if(hsw.Displayed) {
 		ovrHmd_DismissHSWDisplay(hmd);
-		std::cout << "Dismissing display..." << std::endl;
 		return 0;
 	}
 
