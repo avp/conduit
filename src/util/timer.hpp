@@ -5,17 +5,18 @@
 #include <iostream>
 
 #include "../settings.hpp"
+#include "../CycleTimer.h"
 
 class Timer {
   public:
     Timer() {}
 
     static double time() {
-      return std::clock() / (double) CLOCKS_PER_SEC * 1000.0;
+      return CycleTimer::currentSeconds() * 1000.0;
     }
 
     static double timeInSeconds() {
-      return std::clock() / (double) CLOCKS_PER_SEC;
+      return CycleTimer::currentSeconds();
     }
 
 #ifdef DEBUG
@@ -66,6 +67,7 @@ class FramerateProfiler {
     double ticklist[MAX_SAMPLES];
     int samplesCollected = 0;
     double frameStart = 0;
+    double frameStartOld = 0;
 
     /* average will ramp up until the buffer is full */
     /* returns average ticks per frame over the MAXSAMPPLES last frames */

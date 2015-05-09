@@ -1,4 +1,11 @@
 #include "oculus2.hpp"
+
+#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <thread>
+
 #include "../optimizer/optimizer.hpp"
 #include "../settings.hpp"
 
@@ -42,12 +49,11 @@ static TextureData textureRight;
 static bool nextFrame = false;
 static bool three_d_enabled = true;
 const static bool FROZEN = false;
-
 const static int ROTATION_GRANULARITY = 20;
+const static bool USE_OPTIMIZER = true;
 
 static float OculusZAngle = 0;
 static float OculusPitchAngle = 0;
-static bool USE_OPTIMIZER = true;
 
 static inline float getHorizontalAngleForOptimize() {
   return -(OculusZAngle + ourAngle) + 180;
@@ -194,8 +200,8 @@ int Oculus2::run(int argc, char **argv)
 
   updateVideoFrame(myVideoReader);
 
-  int frameNum = 1;
   FramerateProfiler profiler;
+  double lastFPSAnnouncement = Timer::timeInSeconds();
 
   for(;;) {
     profiler.startFrame();
@@ -215,10 +221,12 @@ int Oculus2::run(int argc, char **argv)
 
     profiler.finishFrame();
 
-    frameNum = (frameNum + 1) % 10;
-    if (frameNum == 0) {
-      std::cout << profiler.getFramerate() << " FPS headtracking" << std::endl;
-    }
+    double now = Timer::timeInSeconds();
+		if (now - lastFPSAnnouncement > 2) {
+			lastFPSAnnouncement = now;
+			profiler.getFramerate();
+			std::cout << profiler.getFramerate() << " FPS headtracking " << std::endl;
+		}
   }
 
 done:
