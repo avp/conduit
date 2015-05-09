@@ -1,8 +1,11 @@
 #ifndef CONTRACTS_H_
+#define CONTRACTS_H_
 
 #include <cassert>
 
-#ifndef NO_DEBUG
+#include "settings.hpp"
+
+#ifdef DEBUG
 
 #define REQUIRES(x) assert(x)
 #define ENSURES(x) assert(x)

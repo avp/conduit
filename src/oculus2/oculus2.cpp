@@ -75,6 +75,8 @@ static bool nextFrame = false;
 static bool three_d_enabled = true;
 const static bool FROZEN = false;
 
+const static int ROTATION_GRANULARITY = 20;
+
 static float OculusZAngle = 0;
 static bool USE_OPTIMIZER = true;
 
@@ -85,11 +87,11 @@ static inline float getAngleForOptimize() {
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
   cv::Mat image;
-  // if (USE_OPTIMIZER) {
-  // 	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
-  // } else {
+  if (USE_OPTIMIZER) {
+  	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
+  } else {
   	image = input;
-  // }
+  }
 
   int height = image.rows;
   int width = image.cols;
@@ -141,6 +143,7 @@ int Oculus2::run(int argc, char **argv)
 	std::string filename = argv[2];
 	VideoReader myVideoReader(filename);
 	myVideoReader.optimizeAngle = 0;
+	// myVideoReader.autoOptimize = true;
 	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
@@ -525,45 +528,41 @@ int handle_event(SDL_Event *ev)
 
 int key_event(int key, int state)
 {
-	if (state) {
-		switch( key ){
-			case SDLK_LEFT:
-			case SDLK_a:
-				xPos -= 1;
-				break;
-			case SDLK_RIGHT:
-			case SDLK_d:
-				xPos += 1;
-				break;
-			case SDLK_UP:
-			case SDLK_w:
-				zPos += 1;
-				break;
-			case SDLK_DOWN:
-			case SDLK_s:
-				zPos -= 1;
-				break;
-			case SDLK_q:
-				ourAngle += 45;
-				break;
-			case SDLK_e:
-				ourAngle -= 45;
-				break;
+	if (!state)
+		return 0;
 
-			default:
-				break;
-		}
+	ovrHSWDisplayState hsw;
+	ovrHmd_GetHSWDisplayState(hmd, &hsw);
+	if(hsw.Displayed) {
+		ovrHmd_DismissHSWDisplay(hmd);
+		std::cout << "Dismissing display..." << std::endl;
+		return 0;
 	}
 
+	switch( key ){
+		case SDLK_LEFT:
+		case SDLK_a:
+			xPos -= 1;
+			break;
+		case SDLK_RIGHT:
+		case SDLK_d:
+			xPos += 1;
+			break;
+		case SDLK_UP:
+		case SDLK_w:
+			zPos += 1;
+			break;
+		case SDLK_DOWN:
+		case SDLK_s:
+			zPos -= 1;
+			break;
+		case SDLK_q:
+			ourAngle += ROTATION_GRANULARITY;
+			break;
+		case SDLK_e:
+			ourAngle -= ROTATION_GRANULARITY;
+			break;
 
-	if(state) {
-		ovrHSWDisplayState hsw;
-		ovrHmd_GetHSWDisplayState(hmd, &hsw);
-		if(hsw.Displayed) {
-			ovrHmd_DismissHSWDisplay(hmd);
-		}
-
-		switch(key) {
 		case 27:
 			return -1;
 
@@ -614,8 +613,8 @@ int key_event(int key, int state)
 
 		default:
 			break;
-		}
 	}
+
 	return 0;
 }
 

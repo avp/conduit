@@ -24,7 +24,7 @@ VideoReader::VideoReader(const std::string& filename) {
 void VideoReader::bufferFrames(const std::string& filename) {
   int framesBuffered = 0;
   int framesDropped = 0;
-  while (framesBuffered < 1000) {
+  while (true) {
     if (frameQueue.size() > 10) {
       pthread_mutex_lock(&queueLock);
       pthread_cond_wait(&queueCond, &queueLock);
@@ -42,14 +42,16 @@ void VideoReader::bufferFrames(const std::string& filename) {
       std::cout << "First frame retrieved successfully." << std::endl;
     }
 
-    framesBuffered++;
-    frame = Optimizer::processImage(frame, optimizeAngle, 90);
-
-    frameQueue.enqueue(frame);
+    // important to check isDone before changing frame, or it'll be different!
     if (frame.empty()) {
       fullyBuffered = true;
       return;
     }
+    framesBuffered++;
+
+    if (autoOptimize)
+      frame = Optimizer::processImage(frame, optimizeAngle, 90);
+    frameQueue.enqueue(frame);
   }
 }
 

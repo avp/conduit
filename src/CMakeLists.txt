@@ -61,6 +61,17 @@ add_executable(conduit main.cpp
   ${UTIL}
   ${OCULUS2}
   ${OPTIMIZER}
+  videoreader/videoreader.hpp
+  renderer/renderer.hpp
+  util/imageutil.hpp
+  util/cylinderwarp.hpp
+  util/timer.hpp
+  util/workqueue.h
+  rendertest/rendertest.hpp
+  oculus2/oculus2.hpp
+  optimizer/optimizer.hpp
+  contracts.h
+  buildtest/buildtest.hpp
   )
 
 target_link_libraries(conduit
