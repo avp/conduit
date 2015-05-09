@@ -87,11 +87,11 @@ static inline float getAngleForOptimize() {
 static void loadTexture(const GLuint texture, const cv::Mat& input) {
 
   cv::Mat image;
-  // if (USE_OPTIMIZER) {
-  // 	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
-  // } else {
+  if (USE_OPTIMIZER) {
+  	image = Optimizer::processImage(input, getAngleForOptimize(), 90);
+  } else {
   	image = input;
-  // }
+  }
 
   int height = image.rows;
   int width = image.cols;
@@ -143,7 +143,7 @@ int Oculus2::run(int argc, char **argv)
 	std::string filename = argv[2];
 	VideoReader myVideoReader(filename);
 	myVideoReader.optimizeAngle = 0;
-  myVideoReader.autoOptimize = true;
+	// myVideoReader.autoOptimize = true;
 	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);
