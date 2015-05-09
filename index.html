@@ -8,7 +8,7 @@
 
   <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-  <title>Conduit</title>
+  <title>Conduit: Efficient Video Compression for Live VR Streaming</title>
 </head>
 
 <body>
@@ -75,7 +75,8 @@
 
     <p>
       Conduit is a project to reduce these bandwidth requirements
-      for streaming live 4K panoramic video to a head-mounted display (HMD) like the <a href="https://www.oculus.com/">Oculus Rift</a>.
+      for streaming live 4K panoramic video to a head-mounted display (HMD) like the <a
+      href="https://www.oculus.com/">Oculus Rift</a>.
       We do this by using view-optimization, <strong>optimizing</strong> the video stream by compressing it,
       because we know what your <strong>view</strong> (where you’re looking) is,
       since the direction you’re looking at is reported by the HMD.
@@ -93,7 +94,7 @@
     <h2>Preliminary Results</h2>
 
     <p>
-      <img src="images/fountain-1.png" width="100%" />
+      <img src="images/fountain-1.png" width="100%"/>
     </p>
 
     <p>
@@ -101,8 +102,79 @@
       The frames are view optimized, and they account for the rotation of the viewer’s head.
       With our view optimization, we compress images to less than 20% of their original size.
       Adequate performance was achieved by offloading video reading and decoding to a separate thread.
+      We then used a work queue to buffer the frames, and the Oculus only loads new frames from the buffer, preventing stalls.
+    </p>
+
+    <h3>Approach</h3>
+
+    <p>
+      To simulate a client-server setup, we had our optimizer optimize a given frame, and then extract the unoptimized image to figure out how much time it would take.
+      Optimization is a process that takes the viewer’s head position and the video frame, and gives back a smaller data structure that contains the optimized image.
+      The optimized image would be sent over a network.
+      The client would then extract the image and display it on the HMD.
+    </p>
+
+    <p>
+      Our first approach was something like:
+    </p>
+
+    <pre><code>while (true) {
+  video_frame = get_video_frame();
+  viewer_data = get_viewer_data_from_hmd();
+  optimized_frame = optimize_frame(video_frame, viewer_data);
+  decoded_frame = decode_frame(optimized_frame);
+
+  render_frame(optimized_frame, viewer_data);
+}</code></pre>
+
+    <p>
+      However, this tied the framerate to the amount of time to optimize a frame.
+      This was bad, because it resulted in a substantially lower frame rate for the head-tracking, which is what makes people sick.
+      You move your head, and then see your vision update after 100ms.
+      Instead, we decided that even if the video frame takes a while,
+      there’s no reason we can’t keep updating the scene with your viewer_data
+      (notice viewer_data, containing your head position and orientation, is an argument to render_frame--it tells the code where the camera is).
+    </p>
+
+    <p>
+      Therefore, we decoupled it using a producer-consumer model with a queue.
+      The main render thread is now only responsible for rendering the frame.
+      Another thread keeps reading and optimizing the video, and it puts each finished frame into a queue.
+      The main thread updates its video frame out of the queue if one is available, but if not, it keeps showing the last video frame.
+      In addition, rendering the scene and decoding the frame are independent parts, so we improve performance by running them in parallel.
+      Together, these all make a better user experience.
+    </p>
+
+    <p>
+      Note that the second thread keeps a copy of viewer data in order to perform the view-optimization, and the main thread updates it periodically. Now, it’s more like:
+    </p>
+
+    <pre><code>// Thread 1
+Queue frameQueue;
+Frame frame = frameQueue.dequeue();
+ViewerData viewerData;
+
+while (true) {
+  if (frameQueue.hasNewFrame())
+    frame = frameQueue.dequeue();
+  viewerData = get_viewer_data_from_hmd();
+
+  render_frame(optimized_frame, viewer_data);
+}
+
+// Thread 2
+ViewerData viewerData;
+while (videoFrameAvailable()) {
+  frame = readFrame();
+  frame = deoptimizeFrame(optimizeFrame(frame, viewerData));
+  frameQueue.enqueue(frame);
+}</code></pre>
+
+    <p>
+      Adequate performance was achieved by offloading video reading and decoding to a separate thread.
       We then used a work queue to buffer the frames, and the oculus only loads new frames from the buffer, preventing stalls.
     </p>
+
   </section>
 </div>
 

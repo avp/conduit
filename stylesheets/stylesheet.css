@@ -53,22 +53,22 @@ body {
   color:#373737;
   background: #212121;
   font-size: 16px;
-  font-family: 'Myriad Pro', Calibri, Helvetica, Arial, sans-serif;
+  font-family: 'Myriad Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
   margin: 10px 0;
-  font-weight: 700;
+  font-weight: 300;
   color:#222222;
-  font-family: 'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif;
+  font-family: 'Lucida Grande', Helvetica, Arial, sans-serif;
   letter-spacing: -1px;
 }
 
 h1 {
   font-size: 36px;
-  font-weight: 700;
+  font-weight: 300;
 }
 
 h2 {
@@ -158,7 +158,7 @@ p img {
 }
 
 pre, code {
-  width: 100%;
+  width: 600px;
   color: #222;
   background-color: #fff;
 
@@ -171,7 +171,7 @@ pre, code {
 }
 
 pre {
-  width: 100%;
+  width: 600px;
   padding: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,.1);
   overflow: auto;
@@ -279,8 +279,8 @@ Full-Width Styles
   z-index: 10;
   padding: 10px 50px 10px 10px;
   color: #fff;
-  background: url('../images/blacktocat.png') #0090ff no-repeat 95% 50%;
-  font-weight: 700;
+  background: url('../images/blacktocat.png') #0090ee no-repeat 95% 50%;
+  font-weight: 300;
   box-shadow: 0 0 10px rgba(0,0,0,.5);
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 2px;
@@ -299,7 +299,7 @@ Full-Width Styles
 
 #header_wrap .inner {
   padding: 50px 100px 30px 100px;
-  background: rgba(33, 33, 33, 0.7);
+  background: rgba(33, 33, 33, 0.75);
   /*background: -moz-linear-gradient(top, #373737, #212121);*/
   /*background: -webkit-linear-gradient(top, #373737, #212121);*/
   /*background: -ms-linear-gradient(top, #373737, #212121);*/
@@ -311,13 +311,13 @@ Full-Width Styles
   margin: 0;
   color: #fff;
   font-size: 42px;
-  font-weight: 700;
+  font-weight: 300;
   text-shadow: #111 0px 0px 10px;
 }
 
 #project_tagline {
   color: #fff;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 300;
   background: none;
   text-shadow: #111 0px 0px 10px;
