@@ -143,6 +143,7 @@ int Oculus2::run(int argc, char **argv)
 	std::string filename = argv[2];
 	VideoReader myVideoReader(filename);
 	myVideoReader.optimizeAngle = 0;
+  myVideoReader.autoOptimize = true;
 	
 	glGenTextures(1, &videoTextureLeft);
 	glGenTextures(1, &videoTextureRight);

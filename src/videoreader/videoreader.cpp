@@ -49,7 +49,8 @@ void VideoReader::bufferFrames(const std::string& filename) {
     }
     framesBuffered++;
 
-    frame = Optimizer::processImage(frame, optimizeAngle, 90);
+    if (autoOptimize)
+      frame = Optimizer::processImage(frame, optimizeAngle, 90);
     frameQueue.enqueue(frame);
   }
 }

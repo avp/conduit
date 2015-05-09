@@ -21,6 +21,7 @@ class VideoReader {
     bool showFrame();
     bool isFrameAvailable();
     float optimizeAngle;
+    bool autoOptimize = false;
 
   private:
     void bufferFrames(const std::string& filename);
