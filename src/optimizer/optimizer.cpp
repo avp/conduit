@@ -187,7 +187,6 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Timer timer;
 
   Mat croppedImage = Mat(optImage.blurred);
-  return croppedImage;
 
   timer.start();
   Mat tmp = croppedImage(
