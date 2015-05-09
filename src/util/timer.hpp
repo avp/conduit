@@ -63,7 +63,7 @@ class FramerateProfiler {
   private:
     int tickindex = 0;
     double ticksum = 0;
-    int ticklist[MAX_SAMPLES];
+    double ticklist[MAX_SAMPLES];
     int samplesCollected = 0;
     double frameStart = 0;
 
