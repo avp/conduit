@@ -699,6 +699,13 @@ int key_event(int key, int state)
       printf("next frame\n");
       break;
 
+    case SDLK_b:
+      if (BLUR_FACTOR == BLUR_HIGH)
+        BLUR_FACTOR = BLUR_NORMAL;
+      else
+        BLUR_FACTOR = BLUR_HIGH;
+      break;
+
     case ' ':
     case 'r':
       /* allow the user to recenter by pressing space */

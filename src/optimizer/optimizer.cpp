@@ -8,6 +8,8 @@ using cv::Mat;
 using cv::Range;
 using cv::Size;
 
+int BLUR_FACTOR = BLUR_NORMAL;
+
 OptimizedImage::OptimizedImage(const cv::Mat& focusedTop,
     const cv::Mat& focusedBot,
     const cv::Mat& blurred,

@@ -19,6 +19,10 @@ const int OPTIMIZER_QUEUE_SIZE = 10;
 const int CROP_ANGLE = 180;
 const int H_FOCUS_ANGLE = 30;
 const int V_FOCUS_ANGLE = 30;
-const int BLUR_FACTOR = 20;
+const int BLUR_NORMAL = 3;
+const int BLUR_HIGH = 20;
+extern int BLUR_FACTOR;
+
+
 
 #endif
