@@ -61,8 +61,8 @@
       is powerful.
       Yet, these same events, viewed live at home on a TV, feel far more distant and less immersive.
       We believe that virtual reality (VR) can provide a far more immersive live experience than TV, by adding presence, the feeling that “you’re really there”.
-      However, one of VR’s key advantages, the fact that you have the freedom to look anywhere in 360°, requires using a fully panoramic video.
-      Panoramic videos are large, often 4K resolution (4096 pixels wide, 2160 pixels tall, depending on the standard).
+      However, one of VR’s key advantages, the fact that you have the freedom to look anywhere in 360&deg;, requires using a fully panoramic video.
+      Panoramic videos are large, often 4K resolution (4096 pixels wide, 2048 pixels tall, depending on the standard).
       In addition, VR headsets typically work in 3D, meaning you need a panoramic video for each eye, so you’re streaming effectively a 4096x4096 video.
     </p>
 
@@ -301,6 +301,53 @@ while (true) {
       Using pixel-buffer objects reduced the time to copy textures from ~20ms to ~2ms,
       and since we do it once for each eye, it’s about a ~40ms win on total frame time
     <p>
+
+    <h3>Optimization 4: Pipelining Frame Optimization</h3>
+
+    <p>
+      The framerate was tied to the amount of time to optimize a frame.
+      This was bad, because it resulted in a substantially lower frame rate for the head tracking, which is what makes people sick.
+      You move your head, and then see your vision update after 100ms.
+      Instead, we decided that even if the video frame takes a while,
+      there’s no reason we can’t keep updating the scene with your <code>viewer_data</code>
+      (notice <code>viewer_data</code>, containing your head position and orientation,
+      is an argument to render_frame--it tells the code where the camera is)
+    </p>
+
+    <p>
+      We decoupled optimization using a producer-consumer model with a queue.
+      The main render thread is now only responsible for rendering the frame.
+      Another thread keeps reading and optimizing the video, and it puts each finished frame into a queue.
+      The main thread updates its video frame out of the queue if one is available.
+      In addition, rendering the scene and decoding the frame are independent parts, so we improve performance by running them in parallel.
+      Together, these all make a better user experience.
+    </p>
+
+    <p>
+      Note that the second thread keeps a copy of viewer data in order to perform the view optimization,
+      and the main thread updates it whenever it receives new viewer data. Now, it’s more like:
+    </p>
+
+<pre><code>// T1
+Queue frameQueue;
+Frame frame = frameQueue.dequeue();
+ViewerData viewerData;
+
+while (true) {
+  if (frameQueue.hasNewFrame())
+    frame = frameQueue.dequeue();
+  viewerData = get_viewer_data_from_hmd();
+
+  render_frame(optimized_frame, viewer_data);
+}
+
+// T2
+ViewerData viewerData;
+while (videoFrameAvailable()) {
+  frame = readFrame();
+  frame = deoptimizeFrame(optimizeFrame(frame, viewerData));
+  frameQueue.enqueue(frame);
+}</code></pre>
 
     <p>
       <b>Further optimizations are pending writeup.</b>
