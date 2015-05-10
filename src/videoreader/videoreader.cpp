@@ -60,10 +60,27 @@ bool VideoReader::isFrameAvailable() {
 }
 
 cv::Mat VideoReader::getFrame() {
+#ifdef ASYNC_VIDEOCAPTURE
   cv::Mat frame = frameQueue.dequeue();
   pthread_cond_signal(&queueCond);
+#else
+  cv::Mat frame;
+  videoCapture >> frame;
+  bool hadError = false;
+  int framesDropped = 0;
+  while (frame.empty() && framesDropped++ < MAX_FRAMES_TO_DROP) {
+    videoCapture >> frame;
+    std::cout << "First frame empty. Trying again..." << std::endl;
+    hadError = true;
+  }
+  if (hadError && !frame.empty()) {
+    std::cout << "First frame retrieved successfully." << std::endl;
+  }
+#endif
   return frame;
 }
+
+
 
 static FramerateProfiler videoReaderProfiler;
 

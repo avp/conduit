@@ -50,7 +50,6 @@ static bool nextFrame = false;
 static bool three_d_enabled = true;
 const static bool FROZEN = false;
 const static int ROTATION_GRANULARITY = 20;
-const static bool USE_OPTIMIZER = true;
 
 static float OculusZAngle = 0;
 static float OculusPitchAngle = 0;
@@ -94,8 +93,6 @@ void TextureData::init() {
 
   initialized = true;
 }
-
-#define USE_BUFFER
 
 void TextureData::load(const Mat& input) {
   glBindTexture(GL_TEXTURE_2D, this->name);
@@ -263,7 +260,7 @@ int Oculus2::run(int argc, char **argv)
       << "videoRead=" << videoReadProfiler.getAverageTimeMillis() << "\t"
       << "loadTexture=" << loadTextureProfiler.getAverageTimeMillis() << "\t"
       << "optimize=" << optimizeProfiler.getAverageTimeMillis() << "\t"
-      << "glTexture=" << glTextureProfiler.getAverageTimeMillis() 
+      << "glTexture=" << glTextureProfiler.getAverageTimeMillis()
       << std::endl;
     }
   }
