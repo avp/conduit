@@ -194,7 +194,7 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
       Range(optImage.focusRow + croppedImage.rows / 2,
         optImage.focusRow + croppedImage.rows / 2 + optImage.focusedBot.rows),
       Range(optImage.focusCol, optImage.focusCol + optImage.focusedBot.cols));
-  optImage.focusedTop.copyTo(tmp);
+  optImage.focusedBot.copyTo(tmp);
   timer.stop("Reconstructing");
 
   // Reconstruct middle image
