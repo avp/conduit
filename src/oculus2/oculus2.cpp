@@ -1,15 +1,10 @@
-/* Very simple OculusSDK OpenGL usage example.
- *
- * Uses SDL2 (www.libsdl.org) for event handling and OpenGL context management.
- * Uses GLEW (glew.sourceforge.net) for OpenGL extension wrangling.
- *
- * Author: John Tsiombikas <nuclear@member.fsf.org>
- * This code is in the public domain. Do whatever you like with it.
- */
+#include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <thread>
+
+
 #ifdef WIN32
 #include <SDL.h>
 #else
@@ -35,6 +30,8 @@
 #include "../optimizer/optimizer.hpp"
 #include "../settings.hpp"
 
+using cv::Mat;
+
 static int init(void);
 static void cleanup(void);
 static void toggle_hmd_fullscreen(void);
@@ -46,7 +43,6 @@ static int key_event(int key, int state);
 static void reshape(int x, int y);
 static unsigned int next_pow2(unsigned int x);
 static void quat_to_matrix(const float *quat, float *mat);
-static unsigned int gen_chess_tex(float r0, float g0, float b0, float r1, float g1, float b1);
 
 static SDL_Window *win;
 static SDL_GLContext ctx;
@@ -64,14 +60,12 @@ static union ovrGLConfig glcfg;
 static unsigned int distort_caps;
 static unsigned int hmd_caps;
 
-static unsigned int chess_tex;
-
 static GLUquadric* qobj;
 
 static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
 
-static GLuint videoTextureLeft;
-static GLuint videoTextureRight;
+static TextureData textureLeft;
+static TextureData textureRight;
 
 static bool nextFrame = false;
 static bool three_d_enabled = true;
@@ -91,34 +85,103 @@ static inline float getVerticalAngleForOptimize() {
   return 90 - PITCH_MULTIPLIER * OculusPitchAngle;
 }
 
-static void loadTexture(const GLuint texture, const cv::Mat& input) {
+// TextureData
 
-  cv::Mat image;
+TextureData::TextureData() {
+  // TODO: this shouldn't be copied, right?
+  std::cout << "TextureData created" << std::endl;
+}
+
+void TextureData::init() {
+  REQUIRES(!initialized);
+
+  glGenTextures(1, &this->name);
+  glGenBuffers(1, &this->pbo);
+
+  // TODO: does this have to be done all the time?
+  // or is just once here ok
+  glBindTexture(GL_TEXTURE_2D, this->name);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  initialized = true;
+}
+
+void TextureData::load(const Mat& input) {
+  glBindTexture(GL_TEXTURE_2D, this->name);
+
+  Mat image;
   if (USE_OPTIMIZER) {
     image = Optimizer::processImage(input, getHorizontalAngleForOptimize(), getVerticalAngleForOptimize());
   } else {
     image = input;
   }
 
-  int height = image.rows;
-  int width = image.cols;
+  if (loaded) {
+    // The texture size should stay the same
+    REQUIRES(image.cols == this->width);
+    REQUIRES(image.rows == this->height);
 
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
 
-  // build our texture
-  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
-  glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0,
-      GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+    // map the buffer object into client's memory
+    // Note that glMapBuffer() causes sync issue.
+    // If GPU is working with this buffer, glMapBuffer() will wait(stall)
+    // for GPU to finish its job. To avoid waiting (stall), you can call
+    // first glBufferData() with NULL pointer before glMapBuffer().
+    // If you do that, the previous data in PBO will be discarded and
+    // glMapBuffer() returns a new allocated pointer immediately
+    // even if GPU is still working with the previous data.
 
-  // gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
-  //     GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+     glBufferData(GL_PIXEL_UNPACK_BUFFER, this->size, NULL, GL_STREAM_DRAW);
+     GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+     std::memcpy(ptr, image.ptr(), this->size);
+     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER); // release pointer to mapping buffer
+
+    // copy via pixel buffer
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_BGR, GL_UNSIGNED_BYTE, 0);
+
+    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+  } else {
+    // The first video frame we get, intiialize the texture
+
+    this->height = image.rows;
+    this->width = image.cols;
+    this->size = width * height * 3; // RGB = 3 channels, 1 byte each
+
+    // Initialize Texture
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, this->width, this->height, 0,
+        GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+
+    // Initialize pixel buffer objects, need to delete them when program exits.
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
+    // glBufferData with NULL pointer only reserves memory space.
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, this->size, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    loaded = true;
+  }
 
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+#define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
+
+static void checkGLError(const char *file, int line) {
+  GLenum glErr;
+
+  glErr = glGetError();
+  if (glErr != GL_NO_ERROR)
+  {
+      printf("glError in file %s @ line %d: %s\n",
+             file, line, gluErrorString(glErr));
+      ASSERT(false);
+  }
 }
 
 static void updateVideoFrame(VideoReader& myVideoReader) {
@@ -129,8 +192,8 @@ static void updateVideoFrame(VideoReader& myVideoReader) {
   cv::Mat image = myVideoReader.getFrame();
   cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
   cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
-  loadTexture(videoTextureLeft, left);
-  loadTexture(videoTextureRight, right);
+  textureLeft.load(left);
+  textureRight.load(right);
 }
 
 int Oculus2::run(int argc, char **argv)
@@ -152,9 +215,11 @@ int Oculus2::run(int argc, char **argv)
   myVideoReader.optimizeAngle = 0;
   // myVideoReader.autoOptimize = true;
 
-  glGenTextures(1, &videoTextureLeft);
-  glGenTextures(1, &videoTextureRight);
-  ASSERT(videoTextureLeft != videoTextureRight);
+  CHECK_GL_ERROR();
+  textureLeft.init();
+  textureRight.init();
+  CHECK_GL_ERROR();
+
   updateVideoFrame(myVideoReader);
 
   int frameNum = 1;
@@ -258,7 +323,7 @@ int init(void)
     fb_ovr_tex[i].OGL.Header.RenderViewport.Pos.y = 0;
     fb_ovr_tex[i].OGL.Header.RenderViewport.Size.w = fb_width / 2.0;
     fb_ovr_tex[i].OGL.Header.RenderViewport.Size.h = fb_height;
-    fb_ovr_tex[i].OGL.TexId = fb_tex;	/* both eyes will use the same texture id */
+    fb_ovr_tex[i].OGL.TexId = fb_tex; /* both eyes will use the same texture id */
   }
 
   /* fill in the ovrGLConfig structure needed by the SDK to draw our stereo pair
@@ -307,14 +372,9 @@ int init(void)
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  // glEnable(GL_LIGHTING);
-  // glEnable(GL_LIGHT0);
-  // glEnable(GL_LIGHT1);
   glEnable(GL_NORMALIZE);
 
   glClearColor(0.1, 0.1, 0.1, 1);
-
-  chess_tex = gen_chess_tex(1.0, 0.7, 0.4, 0.4, 0.7, 1.0);
 
   qobj = gluNewQuadric();
   gluQuadricNormals(qobj, GLU_SMOOTH);
@@ -453,7 +513,7 @@ void display()
    */
   glUseProgram(0);
 
-  assert(glGetError() == GL_NO_ERROR);
+  CHECK_GL_ERROR();
 }
 
 void reshape(int x, int y)
@@ -472,7 +532,9 @@ void draw_scene(ovrEyeType eye)
   glTranslatef(0,0,-11);
   glEnable(GL_TEXTURE_2D);
   gluQuadricTexture(qobj, true);
-  glBindTexture(GL_TEXTURE_2D, eye == ovrEye_Left || !three_d_enabled ? videoTextureLeft : videoTextureRight);
+
+  bool isLeft = eye == ovrEye_Left || !three_d_enabled;
+  glBindTexture(GL_TEXTURE_2D, isLeft ? textureLeft.name : textureRight.name);
   glColor3f(1,1,1);
   gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -668,31 +730,4 @@ void quat_to_matrix(const float *quat, float *mat)
 
   mat[3] = mat[7] = mat[11] = 0.0f;
   mat[15] = 1.0f;
-}
-
-/* generate a chessboard texture with tiles colored (r0, g0, b0) and (r1, g1, b1) */
-unsigned int gen_chess_tex(float r0, float g0, float b0, float r1, float g1, float b1)
-{
-  int i, j;
-  unsigned int tex;
-  unsigned char img[8 * 8 * 3];
-  unsigned char *pix = img;
-
-  for(i=0; i<8; i++) {
-    for(j=0; j<8; j++) {
-      int black = (i & 1) == (j & 1);
-      pix[0] = (black ? r0 : r1) * 255;
-      pix[1] = (black ? g0 : g1) * 255;
-      pix[2] = (black ? b0 : b1) * 255;
-      pix += 3;
-    }
-  }
-
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
-
-  return tex;
 }
