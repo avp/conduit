@@ -386,8 +386,10 @@ int init(void)
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glEnable(GL_NORMALIZE);
+  glEnable(GL_TEXTURE_2D);
 
-  glClearColor(0.1, 0.1, 0.1, 1);
+  glClearColor(0, 0, 0, 1);
+  glColor3f(1, 1, 1);
 
   qobj = gluNewQuadric();
   gluQuadricNormals(qobj, GLU_SMOOTH);
@@ -539,21 +541,15 @@ void draw_scene(ovrEyeType eye)
 {
   glMatrixMode(GL_MODELVIEW);
 
-  // glPushMatrix();
   glFrontFace(GL_CW);
   glRotatef(90.0,1.0,0.0,0.0);
   glTranslatef(0,0,-11);
-  glEnable(GL_TEXTURE_2D);
   gluQuadricTexture(qobj, true);
 
   bool isLeft = eye == ovrEye_Left || !three_d_enabled;
   glBindTexture(GL_TEXTURE_2D, isLeft ? textureLeft.name : textureRight.name);
-  glColor3f(1,1,1);
   gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
   glBindTexture(GL_TEXTURE_2D, 0);
-  glDisable(GL_TEXTURE_2D);
-  // glFrontFace(GL_CW);
-  // glPopMatrix();
 }
 
 /* update_rtarg creates (and/or resizes) the render target used to draw the two stero views */
