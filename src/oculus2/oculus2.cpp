@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <thread>
+#include <iomanip>
 
 #include "../optimizer/optimizer.hpp"
 #include "../settings.hpp"
@@ -249,15 +250,17 @@ int Oculus2::run(int argc, char **argv)
     if (now - lastFPSAnnouncement > 2) {
       lastFPSAnnouncement = now;
       profiler.getFramerate();
+      std::cout.precision(3);
+
       std::cout
-      << profiler.getFramerate() << "FPS = \t"
-      << profiler.getAverageTimeMillis() << "\t"
-      << "SDL=" << sdlProfiler.getAverageTimeMillis() << "\t"
-      << "display=" << displayProfiler.getAverageTimeMillis() << "\t"
-      << "videoRead=" << videoReadProfiler.getAverageTimeMillis() << "\t"
-      << "loadTexture=" << loadTextureProfiler.getAverageTimeMillis() << "\t"
-      << "optimize=" << optimizeProfiler.getAverageTimeMillis() << "\t"
-      << "glTexture=" << glTextureProfiler.getAverageTimeMillis()
+      << std::setw(7) << std::fixed << profiler.getFramerate() << " FPS = "
+      << std::setw(7) << profiler.getAverageTimeMillis() << "    "
+      << "SDL=" << std::setw(7) << sdlProfiler.getAverageTimeMillis() << "    "
+      << "display=" << std::setw(7) << displayProfiler.getAverageTimeMillis() << "    "
+      << "videoRead=" << std::setw(7) << videoReadProfiler.getAverageTimeMillis() << "    "
+      << "loadTexture=" << std::setw(7) << loadTextureProfiler.getAverageTimeMillis() << "    "
+      << "optimize=" << std::setw(7) << optimizeProfiler.getAverageTimeMillis() << "    "
+      << "glTexture=" << std::setw(7) << glTextureProfiler.getAverageTimeMillis()
       << std::endl;
     }
   }
