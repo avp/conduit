@@ -1,6 +1,9 @@
 #ifndef OPTIMIZER_OPTIMIZER_H_
 #define OPTIMIZER_OPTIMIZER_H_
 
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <vector>
 
 #include <opencv2/core/core.hpp>
@@ -11,6 +14,7 @@
 #include "../util/timer.hpp"
 #include "../contracts.h"
 #include "../settings.hpp"
+#include "../videoreader/videoreader.hpp"
 
 #ifdef SIMPLE_OPTIMIZER
 
@@ -74,6 +78,22 @@ class Optimizer {
     static cv::Mat extractImage(const OptimizedImage& image);
     static cv::Mat processImage(const cv::Mat& image,
         int angle, int vAngle);
+};
+
+class OptimizerPipeline {
+  public:
+    OptimizerPipeline(VideoReader* vr);
+    cv::Mat getFrame();
+    bool isFrameAvailable();
+
+  private:
+    void bufferFrames(VideoReader* vr);
+    WorkQueue<cv::Mat> frameQueue;
+    pthread_cond_t queueCond;
+    pthread_mutex_t queueLock;
+    std::thread bufferThread;
+    bool fullyBuffered;
+    bool frameAvailable;
 };
 
 #endif

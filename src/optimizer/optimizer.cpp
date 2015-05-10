@@ -441,3 +441,50 @@ cv::Mat Optimizer::processImage(const cv::Mat& input,
 }
 
 #endif
+
+// OptimizerPipeline
+
+OptimizerPipeline::OptimizerPipeline(VideoReader* vr) {
+  pthread_cond_init(&queueCond, NULL);
+  pthread_mutex_init(&queueLock, NULL);
+
+  bufferThread = std::thread(&OptimizerPipeline::bufferFrames, this, vr);
+  // bufferThread.detach();
+}
+
+cv::Mat OptimizerPipeline::getFrame() {
+  cv::Mat frame = frameQueue.dequeue();
+  pthread_cond_signal(&queueCond);
+  return frame;
+}
+
+void OptimizerPipeline::bufferFrames(VideoReader* vr) {
+  while (true) {
+    if (frameQueue.size() > 10) {
+      pthread_mutex_lock(&queueLock);
+      pthread_cond_wait(&queueCond, &queueLock);
+      pthread_mutex_unlock(&queueLock);
+    }
+    cv::Mat frame = vr->getFrame();
+
+    // important to check isDone before changing frame, or it'll be different!
+    if (frame.empty()) {
+      fullyBuffered = true;
+      return;
+    }
+
+    // frame = Optimizer::processImage(frame, 0, 90);
+    frameQueue.enqueue(frame);
+    frameAvailable = true;
+  }
+}
+
+bool OptimizerPipeline::isFrameAvailable() {
+  if (!frameAvailable) return false;
+  if (frameQueue.size() > 0)
+    return true;
+  else {
+    frameAvailable = false;
+    return false;
+  }
+}
