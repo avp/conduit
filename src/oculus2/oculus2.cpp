@@ -1,31 +1,3 @@
-#include <cstring>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <thread>
-
-
-#ifdef WIN32
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif
-#include <GL/glew.h>
-
-#ifdef WIN32
-#define OVR_OS_WIN32
-#elif defined(__APPLE__)
-#define OVR_OS_MAC
-#else
-#define OVR_OS_LINUX
-#include <X11/Xlib.h>
-#include <GL/glx.h>
-#endif
-
-#include <OVR_CAPI.h>
-#include <OVR_CAPI_GL.h>
-#include <Extras/OVR_Math.h>
-
 #include "oculus2.hpp"
 #include "../optimizer/optimizer.hpp"
 #include "../settings.hpp"
