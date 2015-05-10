@@ -36,7 +36,7 @@ class Timer {
 
 };
 
-static const int MAX_SAMPLES = 100;
+static const int MAX_SAMPLES = 50;
 
 class FramerateProfiler {
   public:

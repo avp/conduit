@@ -8,11 +8,6 @@ using cv::Mat;
 using cv::Range;
 using cv::Size;
 
-static const int CROP_ANGLE = 180;
-static const int H_FOCUS_ANGLE = 30;
-static const int V_FOCUS_ANGLE = 30;
-static const int BLUR_FACTOR = 3;
-
 OptimizedImage::OptimizedImage(const cv::Mat& focusedTop,
     const cv::Mat& focusedBot,
     const cv::Mat& blurred,

@@ -15,4 +15,10 @@ const bool USE_OPTIMIZER = true;
 
 const int OPTIMIZER_QUEUE_SIZE = 10;
 
+// Optimizer settings
+const int CROP_ANGLE = 180;
+const int H_FOCUS_ANGLE = 30;
+const int V_FOCUS_ANGLE = 30;
+const int BLUR_FACTOR = 20;
+
 #endif
