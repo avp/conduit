@@ -7,8 +7,6 @@
 
 #define ASYNC_VIDEOCAPTURE
 
-#define SIMPLE_OPTIMIZER
-
 #define USE_OPTIMIZER_PIPELINE
 
 const float PITCH_MULTIPLIER = 90.0 / 50.0;

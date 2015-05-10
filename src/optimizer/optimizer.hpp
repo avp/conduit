@@ -16,8 +16,6 @@
 #include "../settings.hpp"
 #include "../videoreader/videoreader.hpp"
 
-#ifdef SIMPLE_OPTIMIZER
-
 class OptimizedImage {
   friend class Optimizer;
 
@@ -25,12 +23,14 @@ class OptimizedImage {
     size_t size() const;
 
   private:
-    OptimizedImage(const cv::Mat& focused,
+    OptimizedImage(const cv::Mat& focusedTop,
+        const cv::Mat& focusedBot,
         const cv::Mat& blurred,
         int focusRow, int focusCol,
         cv::Size croppedSize, cv::Size fullSize, int leftBuffer);
 
-    cv::Mat focused;
+    cv::Mat focusedTop;
+    cv::Mat focusedBot;
     cv::Mat blurred;
     int focusRow;
     int focusCol;
@@ -38,38 +38,6 @@ class OptimizedImage {
     cv::Size fullSize;
     int leftBuffer;
 };
-
-#else
-
-class OptimizedImage {
-  friend class Optimizer;
-
-  public:
-    size_t size() const;
-
-  private:
-    OptimizedImage(const cv::Mat& focused,
-        const cv::Mat& blurredLeft,
-        const cv::Mat& blurredRight,
-        const cv::Mat& blurredTop,
-        const cv::Mat& blurredBottom,
-        cv::Size origHSize,
-        cv::Size origVSize,
-        cv::Size fullSize,
-        int leftBuffer);
-
-    cv::Mat focused;
-    cv::Mat blurredLeft;
-    cv::Mat blurredRight;
-    cv::Mat blurredTop;
-    cv::Mat blurredBottom;
-    cv::Size origHSize;
-    cv::Size origVSize;
-    cv::Size fullSize;
-    int leftBuffer;
-};
-
-#endif
 
 class Optimizer {
   public:
