@@ -10,6 +10,9 @@
 #include "../util/imageutil.hpp"
 #include "../util/timer.hpp"
 #include "../contracts.h"
+#include "../settings.hpp"
+
+#ifdef SIMPLE_OPTIMIZER
 
 class OptimizedImage {
   friend class Optimizer;
@@ -31,6 +34,38 @@ class OptimizedImage {
     cv::Size fullSize;
     int leftBuffer;
 };
+
+#else
+
+class OptimizedImage {
+  friend class Optimizer;
+
+  public:
+    size_t size() const;
+
+  private:
+    OptimizedImage(const cv::Mat& focused,
+        const cv::Mat& blurredLeft,
+        const cv::Mat& blurredRight,
+        const cv::Mat& blurredTop,
+        const cv::Mat& blurredBottom,
+        cv::Size origHSize,
+        cv::Size origVSize,
+        cv::Size fullSize,
+        int leftBuffer);
+
+    cv::Mat focused;
+    cv::Mat blurredLeft;
+    cv::Mat blurredRight;
+    cv::Mat blurredTop;
+    cv::Mat blurredBottom;
+    cv::Size origHSize;
+    cv::Size origVSize;
+    cv::Size fullSize;
+    int leftBuffer;
+};
+
+#endif
 
 class Optimizer {
   public:

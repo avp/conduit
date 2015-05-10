@@ -74,7 +74,6 @@ class FramerateProfiler {
     double ticklist[MAX_SAMPLES];
     int samplesCollected = 0;
     double frameStart = 0;
-    double frameStartOld = 0;
 
     /* average will ramp up until the buffer is full */
     /* returns average ticks per frame over the MAXSAMPPLES last frames */

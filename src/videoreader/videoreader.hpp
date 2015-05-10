@@ -11,6 +11,7 @@
 
 #include "../util/timer.hpp"
 #include "../util/workqueue.h"
+#include "../settings.hpp"
 
 const int MAX_FRAMES_TO_DROP = 10;
 
