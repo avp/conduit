@@ -215,17 +215,14 @@ int Oculus2::run(int argc, char **argv)
   myVideoReader.optimizeAngle = 0;
   // myVideoReader.autoOptimize = true;
 
-  CHECK_GL_ERROR();
   textureLeft.init();
   textureRight.init();
-  CHECK_GL_ERROR();
-
   updateVideoFrame(myVideoReader, true);
 
   FramerateProfiler profiler;
   double lastFPSAnnouncement = Timer::timeInSeconds();
 
-  for(;;) {
+  while (true) {
     profiler.startFrame();
 
     sdlProfiler.startFrame();
