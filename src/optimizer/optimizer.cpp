@@ -256,9 +256,9 @@ static Mat cropVerticallyWrapped(const Mat& image, int leftCol, int rightCol) {
     // Cropped window *does* wrap around. We need to get theart
     //     // before and after it wraps, which are in two separatelaces
     // on the image.
-    Mat leftMat = Mat(image, Range::all(), Range(leftCol, image.rows));
+    Mat leftMat = Mat(image, Range::all(), Range(leftCol, image.cols));
     Mat rightMat = Mat(image, Range::all(), Range(0, rightCol));
-    hconcat(leftMat, rightMat, cropped);
+    ImageUtil::hconcat2(leftMat, rightMat, cropped);
   }
   return cropped;
 }
@@ -288,7 +288,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   start = Timer::time();
   Mat cropped = cropVerticallyWrapped(image, leftCol, rightCol);
   end = Timer::time();
-  std::cout << "Cropping: " << end - start << " ms" << std::endl;
+  //std::cout << "Cropping: " << end - start << " ms" << std::endl;
 
   int focusWidth = H_FOCUS_ANGLE * angleToWidth;
 
@@ -303,7 +303,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   Mat left = Mat(cropped, Range::all(), Range(0, focusLeftCol));
   Mat right = Mat(cropped, Range::all(), Range(focusRightCol, cropped.cols));
   end = Timer::time();
-  std::cout << "Splitting (H): " << end - start << " ms" << std::endl;
+  //std::cout << "Splitting (H): " << end - start << " ms" << std::endl;
 
   Size origHSize(left.size());
 
@@ -315,7 +315,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   cv::resize(left, blurredLeft, smallSize);
   cv::resize(right, blurredRight, smallSize);
   end = Timer::time();
-  std::cout << "Blurring (H): " << end - start << " ms" << std::endl;
+  //std::cout << "Blurring (H): " << end - start << " ms" << std::endl;
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
   int focusMiddleRow = vAngle * angleToHeight;
@@ -327,7 +327,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   Mat focused(middle, Range(focusTopRow, focusBottomRow));
   Mat bottom(middle, Range(focusBottomRow, middle.rows));
   end = Timer::time();
-  std::cout << "Splitting (V): " << end - start << " ms" << std::endl;
+  //std::cout << "Splitting (V): " << end - start << " ms" << std::endl;
 
   start = Timer::time();
   Mat blurredTop, blurredBottom;
@@ -336,7 +336,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
   cv::resize(top, blurredTop, smallVSize);
   cv::resize(bottom, blurredBottom, smallVSize);
   end = Timer::time();
-  std::cout << "Blurring (V): " << end - start << " ms" << std::endl;
+  //std::cout << "Blurring (V): " << end - start << " ms" << std::endl;
 
   OptimizedImage optImage(focused,
       blurredLeft, blurredRight,
@@ -402,13 +402,13 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   cv::resize(optImage.blurredLeft, left, optImage.origHSize);
   cv::resize(optImage.blurredRight, right, optImage.origHSize);
   end = Timer::time();
-  std::cout << "Resizing (H): " << end - start << " ms" << std::endl;
+  //std::cout << "Resizing (H): " << end - start << " ms" << std::endl;
 
   start = Timer::time();
   cv::resize(optImage.blurredTop, top, optImage.origVSize);
   cv::resize(optImage.blurredBottom, bottom, optImage.origVSize);
   end = Timer::time();
-  std::cout << "Resizing (V): " << end - start << " ms" << std::endl;
+  //std::cout << "Resizing (V): " << end - start << " ms" << std::endl;
 
   start = Timer::time();
   // Reconstruct middle image
@@ -417,14 +417,17 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
 
   // Reconstruct cropped image
   Mat croppedImage;
+  ASSERT(!left.empty());
+   ASSERT(!middle.empty());
+    ASSERT(!right.empty());
   ImageUtil::hconcat3(left, middle, right, croppedImage);
   end = Timer::time();
-  std::cout << "Reconstructing: " << end - start << " ms" << std::endl;
+  //std::cout << "Reconstructing: " << end - start << " ms" << std::endl;
 
   start = Timer::time();
   Mat fullImage = uncropWrapped(croppedImage, optImage.fullSize.width, optImage.leftBuffer);
   end = Timer::time();
-  std::cout << "Full image: " << end - start << " ms" << std::endl;
+  //std::cout << "Full image: " << end - start << " ms" << std::endl;
 
   ENSURES(fullImage.size() == optImage.fullSize);
 
