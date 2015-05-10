@@ -112,7 +112,7 @@ void TextureData::load(const Mat& input) {
     REQUIRES(image.cols == this->width);
     REQUIRES(image.rows == this->height);
 
-#ifdef USE_BUFFER
+#ifdef USE_PIXEL_BUFFER
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
 
     // map the buffer object into client's memory

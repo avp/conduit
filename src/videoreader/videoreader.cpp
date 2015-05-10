@@ -14,11 +14,13 @@ VideoReader::VideoReader(const std::string& filename) {
   windowCreated = false;
   fullyBuffered = false;
 
+#ifdef ASYNC_VIDEOCAPTURE
   pthread_cond_init(&queueCond, NULL);
   pthread_mutex_init(&queueLock, NULL);
 
   bufferThread = std::thread(&VideoReader::bufferFrames, this, filename);
   bufferThread.detach();
+#endif
 }
 
 void VideoReader::bufferFrames(const std::string& filename) {
@@ -56,7 +58,11 @@ void VideoReader::bufferFrames(const std::string& filename) {
 }
 
 bool VideoReader::isFrameAvailable() {
+#ifdef ASYNC_VIDEOCAPTURE
   return frameQueue.size() > 0;
+#else
+  return true;
+#endif
 }
 
 cv::Mat VideoReader::getFrame() {
