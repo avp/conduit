@@ -95,6 +95,8 @@ void TextureData::init() {
   initialized = true;
 }
 
+#define USE_BUFFER
+
 void TextureData::load(const Mat& input) {
   glBindTexture(GL_TEXTURE_2D, this->name);
 
@@ -113,6 +115,7 @@ void TextureData::load(const Mat& input) {
     REQUIRES(image.cols == this->width);
     REQUIRES(image.rows == this->height);
 
+#ifdef USE_BUFFER
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
 
     // map the buffer object into client's memory
@@ -132,9 +135,11 @@ void TextureData::load(const Mat& input) {
     // copy via pixel buffer
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_BGR, GL_UNSIGNED_BYTE, 0);
 
-    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
-
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+#else
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+#endif
+
   } else {
     // The first video frame we get, intiialize the texture
 
@@ -146,11 +151,13 @@ void TextureData::load(const Mat& input) {
     glTexImage2D(GL_TEXTURE_2D, 0, 3, this->width, this->height, 0,
         GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
 
+#ifdef USE_BUFFER
     // Initialize pixel buffer objects, need to delete them when program exits.
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
     // glBufferData with NULL pointer only reserves memory space.
     glBufferData(GL_PIXEL_UNPACK_BUFFER, this->size, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+#endif
 
     loaded = true;
   }
