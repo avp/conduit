@@ -178,14 +178,15 @@ static void checkGLError(const char *file, int line) {
   }
 }
 
-static void updateVideoFrame(VideoReader& myVideoReader, bool firstFrame) {
+#ifdef USE_OPTIMIZER_PIPELINE
+static void updateVideoFrame(OptimizerPipeline& pipeline, bool firstFrame) {
   // on the first frame, we want to wait till the video starts
-  if (!firstFrame && !myVideoReader.isFrameAvailable())
+  if (!firstFrame && !pipeline.isFrameAvailable())
     return;
 
   if (!firstFrame)
     videoReadProfiler.startFrame();
-  cv::Mat image = myVideoReader.getFrame();
+  cv::Mat image = pipeline.getFrame();
   if (!firstFrame)
     videoReadProfiler.endFrame();
 
@@ -196,6 +197,26 @@ static void updateVideoFrame(VideoReader& myVideoReader, bool firstFrame) {
   textureRight.load(right);
   loadTextureProfiler.endFrame();
 }
+#else
+static void updateVideoFrame(VideoReader& videoReader, bool firstFrame) {
+  // on the first frame, we want to wait till the video starts
+  if (!firstFrame && !videoReader.isFrameAvailable())
+    return;
+
+  if (!firstFrame)
+    videoReadProfiler.startFrame();
+  cv::Mat image = videoReader.getFrame();
+  if (!firstFrame)
+    videoReadProfiler.endFrame();
+
+  loadTextureProfiler.startFrame();
+  cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
+  cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
+  textureLeft.load(left);
+  textureRight.load(right);
+  loadTextureProfiler.endFrame();
+}
+#endif
 
 int Oculus2::run(int argc, char **argv)
 {
@@ -214,11 +235,20 @@ int Oculus2::run(int argc, char **argv)
   std::string filename = argv[2];
   VideoReader myVideoReader(filename);
   myVideoReader.optimizeAngle = 0;
-  // myVideoReader.autoOptimize = true;
+
+#ifdef USE_OPTIMIZER_PIPELINE
+  myVideoReader.autoOptimize = true;
+  OptimizerPipeline pipeline(&myVideoReader);
+#endif
 
   textureLeft.init();
   textureRight.init();
+
+#ifdef USE_OPTIMIZER_PIPELINE
+  updateVideoFrame(pipeline, true);
+#else
   updateVideoFrame(myVideoReader, true);
+#endif
 
   FramerateProfiler profiler;
   double lastFPSAnnouncement = Timer::timeInSeconds();
@@ -241,7 +271,11 @@ int Oculus2::run(int argc, char **argv)
 
     myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
     if (!FROZEN) {
+#ifdef USE_OPTIMIZER_PIPELINE
+      updateVideoFrame(pipeline, false);
+#else
       updateVideoFrame(myVideoReader, false);
+#endif
     }
 
     profiler.endFrame();

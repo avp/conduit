@@ -449,7 +449,7 @@ OptimizerPipeline::OptimizerPipeline(VideoReader* vr) {
   pthread_mutex_init(&queueLock, NULL);
 
   bufferThread = std::thread(&OptimizerPipeline::bufferFrames, this, vr);
-  // bufferThread.detach();
+  bufferThread.detach();
 }
 
 cv::Mat OptimizerPipeline::getFrame() {
