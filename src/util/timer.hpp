@@ -50,7 +50,7 @@ class FramerateProfiler {
       frameStart = Timer::timeInSeconds();
     }
 
-    void finishFrame() {
+    void endFrame() {
       profileFrame(Timer::timeInSeconds() - frameStart);
     }
 
@@ -59,6 +59,13 @@ class FramerateProfiler {
         return 0;
 
       return samplesCollected/ticksum;
+    }
+
+    double getAverageTimeMillis() {
+      if (samplesCollected == 0)
+        return 0;
+
+      return 1000 * ticksum/samplesCollected;
     }
 
   private:

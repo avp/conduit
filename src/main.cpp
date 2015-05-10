@@ -36,7 +36,7 @@ static int playVideo(int argc, char* argv[]) {
   std::string filename = argv[2];
   VideoReader videoReader(filename);
   while (videoReader.showFrame()) {
-    cv::waitKey(30);
+    cv::waitKey(1);
   }
   return 0;
 }

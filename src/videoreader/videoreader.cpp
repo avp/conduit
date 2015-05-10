@@ -65,6 +65,8 @@ cv::Mat VideoReader::getFrame() {
   return frame;
 }
 
+static FramerateProfiler videoReaderProfiler;
+
 bool VideoReader::showFrame() {
   if (!windowCreated) {
     cv::namedWindow(WINDOW_NAME, CV_WINDOW_NORMAL);

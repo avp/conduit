@@ -63,6 +63,13 @@ static inline float getVerticalAngleForOptimize() {
   return 90 - PITCH_MULTIPLIER * OculusPitchAngle;
 }
 
+static FramerateProfiler videoReadProfiler;
+static FramerateProfiler loadTextureProfiler;
+static FramerateProfiler displayProfiler;
+static FramerateProfiler sdlProfiler;
+static FramerateProfiler optimizeProfiler;
+static FramerateProfiler glTextureProfiler;
+
 // TextureData
 
 TextureData::TextureData() {
@@ -93,11 +100,14 @@ void TextureData::load(const Mat& input) {
 
   Mat image;
   if (USE_OPTIMIZER) {
+    optimizeProfiler.startFrame();
     image = Optimizer::processImage(input, getHorizontalAngleForOptimize(), getVerticalAngleForOptimize());
+    optimizeProfiler.endFrame();
   } else {
     image = input;
   }
 
+  glTextureProfiler.startFrame();
   if (loaded) {
     // The texture size should stay the same
     REQUIRES(image.cols == this->width);
@@ -146,6 +156,7 @@ void TextureData::load(const Mat& input) {
   }
 
   glBindTexture(GL_TEXTURE_2D, 0);
+  glTextureProfiler.endFrame();
 }
 
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
@@ -167,11 +178,16 @@ static void updateVideoFrame(VideoReader& myVideoReader) {
     return;
 
   // TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
+  videoReadProfiler.startFrame();
   cv::Mat image = myVideoReader.getFrame();
+  videoReadProfiler.endFrame();
+
+  loadTextureProfiler.startFrame();
   cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
   cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
   textureLeft.load(left);
   textureRight.load(right);
+  loadTextureProfiler.endFrame();
 }
 
 int Oculus2::run(int argc, char **argv)
@@ -184,7 +200,7 @@ int Oculus2::run(int argc, char **argv)
       return 1;
   }
 
-  if(init() == -1) {
+  if (init() == -1) {
     return 1;
   }
 
@@ -206,27 +222,41 @@ int Oculus2::run(int argc, char **argv)
   for(;;) {
     profiler.startFrame();
 
+    sdlProfiler.startFrame();
     SDL_Event ev;
     while(SDL_PollEvent(&ev)) {
       if(handle_event(&ev) == -1) {
         goto done;
       }
     }
+    sdlProfiler.endFrame();
+
+    displayProfiler.startFrame();
     display();
+    displayProfiler.endFrame();
 
     myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
     if (!FROZEN) {
       updateVideoFrame(myVideoReader);
     }
 
-    profiler.finishFrame();
+    profiler.endFrame();
 
     double now = Timer::timeInSeconds();
-		if (now - lastFPSAnnouncement > 2) {
-			lastFPSAnnouncement = now;
-			profiler.getFramerate();
-			std::cout << profiler.getFramerate() << " FPS headtracking " << std::endl;
-		}
+    if (now - lastFPSAnnouncement > 2) {
+      lastFPSAnnouncement = now;
+      profiler.getFramerate();
+      std::cout
+      << profiler.getFramerate() << "FPS = \t"
+      << profiler.getAverageTimeMillis() << "\t"
+      << "SDL=" << sdlProfiler.getAverageTimeMillis() << "\t"
+      << "display=" << displayProfiler.getAverageTimeMillis() << "\t"
+      << "videoRead=" << videoReadProfiler.getAverageTimeMillis() << "\t"
+      << "loadTexture=" << loadTextureProfiler.getAverageTimeMillis() << "\t"
+      << "optimize=" << optimizeProfiler.getAverageTimeMillis() << "\t"
+      << "glTexture=" << glTextureProfiler.getAverageTimeMillis() 
+      << std::endl;
+    }
   }
 
 done:
