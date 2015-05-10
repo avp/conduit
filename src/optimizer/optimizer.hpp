@@ -85,6 +85,8 @@ class OptimizerPipeline {
     OptimizerPipeline(VideoReader* vr);
     cv::Mat getFrame();
     bool isFrameAvailable();
+    int hAngle = 0;
+    int vAngle = 90;
 
   private:
     void bufferFrames(VideoReader* vr);

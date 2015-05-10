@@ -99,6 +99,9 @@ void TextureData::load(const Mat& input) {
   glBindTexture(GL_TEXTURE_2D, this->name);
 
   Mat image;
+#ifdef USE_OPTIMIZER_PIPELINE
+  image = input;
+#else
   if (USE_OPTIMIZER) {
     optimizeProfiler.startFrame();
     image = Optimizer::processImage(input, getHorizontalAngleForOptimize(), getVerticalAngleForOptimize());
@@ -106,6 +109,7 @@ void TextureData::load(const Mat& input) {
   } else {
     image = input;
   }
+#endif
 
   glTextureProfiler.startFrame();
   if (loaded) {
@@ -234,49 +238,37 @@ int Oculus2::run(int argc, char **argv)
 
   std::string filename = argv[2];
   VideoReader myVideoReader(filename);
-  myVideoReader.optimizeAngle = 0;
 
 #ifdef USE_OPTIMIZER_PIPELINE
-  myVideoReader.autoOptimize = true;
   OptimizerPipeline pipeline(&myVideoReader);
 #endif
 
   textureLeft.init();
   textureRight.init();
 
-#ifdef USE_OPTIMIZER_PIPELINE
-  updateVideoFrame(pipeline, true);
-#else
-  updateVideoFrame(myVideoReader, true);
-#endif
-
   FramerateProfiler profiler;
   double lastFPSAnnouncement = Timer::timeInSeconds();
+
+  bool isFirstFrame = true;
 
   while (true) {
     profiler.startFrame();
 
-    sdlProfiler.startFrame();
-    SDL_Event ev;
-    while(SDL_PollEvent(&ev)) {
-      if(handle_event(&ev) == -1) {
-        goto done;
-      }
+    if (!FROZEN) {
+#ifdef USE_OPTIMIZER_PIPELINE
+      pipeline.hAngle = getHorizontalAngleForOptimize();
+      pipeline.vAngle = getVerticalAngleForOptimize();
+      updateVideoFrame(pipeline, isFirstFrame);
+#else
+      updateVideoFrame(myVideoReader, isFirstFrame);
+#endif
+
+      isFirstFrame = false;
     }
-    sdlProfiler.endFrame();
 
     displayProfiler.startFrame();
     display();
     displayProfiler.endFrame();
-
-    myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
-    if (!FROZEN) {
-#ifdef USE_OPTIMIZER_PIPELINE
-      updateVideoFrame(pipeline, false);
-#else
-      updateVideoFrame(myVideoReader, false);
-#endif
-    }
 
     profiler.endFrame();
 
@@ -297,6 +289,15 @@ int Oculus2::run(int argc, char **argv)
       << "glTexture=" << std::setw(7) << glTextureProfiler.getAverageTimeMillis()
       << std::endl;
     }
+
+    sdlProfiler.startFrame();
+    SDL_Event ev;
+    while(SDL_PollEvent(&ev)) {
+      if(handle_event(&ev) == -1) {
+        goto done;
+      }
+    }
+    sdlProfiler.endFrame();
   }
 
 done:

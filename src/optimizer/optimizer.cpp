@@ -11,7 +11,7 @@ using cv::Size;
 static const int CROP_ANGLE = 180;
 static const int H_FOCUS_ANGLE = 30;
 static const int V_FOCUS_ANGLE = 30;
-static const int BLUR_FACTOR = 2;
+static const int BLUR_FACTOR = 3;
 
 #ifdef SIMPLE_OPTIMIZER
 
@@ -460,7 +460,7 @@ cv::Mat OptimizerPipeline::getFrame() {
 
 void OptimizerPipeline::bufferFrames(VideoReader* vr) {
   while (true) {
-    if (frameQueue.size() > 10) {
+    if (frameQueue.size() > OPTIMIZER_QUEUE_SIZE) {
       pthread_mutex_lock(&queueLock);
       pthread_cond_wait(&queueCond, &queueLock);
       pthread_mutex_unlock(&queueLock);
@@ -473,7 +473,7 @@ void OptimizerPipeline::bufferFrames(VideoReader* vr) {
       return;
     }
 
-    // frame = Optimizer::processImage(frame, 0, 90);
+    frame = Optimizer::processImage(frame, hAngle, vAngle);
     frameQueue.enqueue(frame);
     frameAvailable = true;
   }
