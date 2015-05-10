@@ -106,7 +106,7 @@ OptimizedImage Optimizer::optimizeImage(const Mat& image,
 
   int focusHeight = V_FOCUS_ANGLE * angleToHeight;
   int focusMiddleRow = clamp(vAngle * angleToHeight,
-      focusHeight / 2, image.rows - focusHeight / 2);
+      focusHeight / 2, (image.rows / 2) - focusHeight / 2);
   int focusTopRow = focusMiddleRow - focusHeight / 2;
   int focusBottomRow = focusMiddleRow + focusHeight / 2;
 
