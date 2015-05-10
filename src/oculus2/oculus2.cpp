@@ -148,7 +148,7 @@ void TextureData::load(const Mat& input) {
     glTexImage2D(GL_TEXTURE_2D, 0, 3, this->width, this->height, 0,
         GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
 
-#ifdef USE_BUFFER
+#ifdef USE_PIXEL_BUFFER
     // Initialize pixel buffer objects, need to delete them when program exits.
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pbo);
     // glBufferData with NULL pointer only reserves memory space.

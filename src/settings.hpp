@@ -3,14 +3,14 @@
 
 // #define DEBUG
 
-#define USE_BUFFER
+#define USE_PIXEL_BUFFER
 
 #define ASYNC_VIDEOCAPTURE
 
 #define SIMPLE_OPTIMIZER
 
-static const float PITCH_MULTIPLIER = 90.0/50.0;
+const float PITCH_MULTIPLIER = 90.0 / 50.0;
 
-const static bool USE_OPTIMIZER = true;
+const bool USE_OPTIMIZER = true;
 
 #endif
