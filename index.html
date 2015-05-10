@@ -96,7 +96,7 @@
       and so we introduce multiple techniques to mitigate this by adaptively changing the compression parameters and taking advantage of the GPU to reduce latency.
     </p>
 
-    <h2>Results</h2>
+    <h2>Preliminary Results</h2>
 
     <p>
       We have a baseline working renderer that can read videos and render them to the Oculus.
@@ -301,6 +301,10 @@ while (true) {
       Using pixel-buffer objects reduced the time to copy textures from ~20ms to ~2ms,
       and since we do it once for each eye, it’s about a ~40ms win on total frame time
     <p>
+
+    <p>
+      <b>Further optimizations are pending writeup.</b>
+    </p>
 
   </section>
 </div>
