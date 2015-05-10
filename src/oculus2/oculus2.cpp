@@ -180,14 +180,16 @@ static void checkGLError(const char *file, int line) {
   }
 }
 
-static void updateVideoFrame(VideoReader& myVideoReader) {
-  if (!myVideoReader.isFrameAvailable())
+static void updateVideoFrame(VideoReader& myVideoReader, bool firstFrame) {
+  // on the first frame, we want to wait till the video starts
+  if (!firstFrame && !myVideoReader.isFrameAvailable())
     return;
 
-  // TODO: http://stackoverflow.com/questions/9863969/updating-a-texture-in-opengl-with-glteximage2d
-  videoReadProfiler.startFrame();
+  if (!firstFrame)
+    videoReadProfiler.startFrame();
   cv::Mat image = myVideoReader.getFrame();
-  videoReadProfiler.endFrame();
+  if (!firstFrame)
+    videoReadProfiler.endFrame();
 
   loadTextureProfiler.startFrame();
   cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
@@ -221,7 +223,7 @@ int Oculus2::run(int argc, char **argv)
   textureRight.init();
   CHECK_GL_ERROR();
 
-  updateVideoFrame(myVideoReader);
+  updateVideoFrame(myVideoReader, true);
 
   FramerateProfiler profiler;
   double lastFPSAnnouncement = Timer::timeInSeconds();
@@ -244,7 +246,7 @@ int Oculus2::run(int argc, char **argv)
 
     myVideoReader.optimizeAngle = getHorizontalAngleForOptimize();
     if (!FROZEN) {
-      updateVideoFrame(myVideoReader);
+      updateVideoFrame(myVideoReader, false);
     }
 
     profiler.endFrame();
