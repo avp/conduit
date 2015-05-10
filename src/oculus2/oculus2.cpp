@@ -55,6 +55,8 @@ const static int ROTATION_GRANULARITY = 20;
 static float OculusZAngle = 0;
 static float OculusPitchAngle = 0;
 
+static GLuint myDisplayList;
+
 static inline float getHorizontalAngleForOptimize() {
   return -(OculusZAngle + ourAngle) + 180;
 }
@@ -246,6 +248,11 @@ int Oculus2::run(int argc, char **argv)
   textureLeft.init();
   textureRight.init();
 
+  myDisplayList = glGenLists(1);
+  glNewList(myDisplayList, GL_COMPILE);
+  gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
+  glEndList();
+
   FramerateProfiler profiler;
   double lastFPSAnnouncement = Timer::timeInSeconds();
 
@@ -431,6 +438,8 @@ int init(void)
 
   qobj = gluNewQuadric();
   gluQuadricNormals(qobj, GLU_SMOOTH);
+  gluQuadricTexture(qobj, true);
+  glFrontFace(GL_CW);
 
   if (!is_debug)
     toggle_hmd_fullscreen();
@@ -577,16 +586,15 @@ void reshape(int x, int y)
 
 void draw_scene(ovrEyeType eye)
 {
-  glMatrixMode(GL_MODELVIEW);
-
-  glFrontFace(GL_CW);
-  glRotatef(90.0,1.0,0.0,0.0);
-  glTranslatef(0,0,-11);
-  gluQuadricTexture(qobj, true);
-
   bool isLeft = eye == ovrEye_Left || !three_d_enabled;
   glBindTexture(GL_TEXTURE_2D, isLeft ? textureLeft.name : textureRight.name);
-  gluCylinder(qobj, 10.0, 10.0, 20.0, 20, 20);
+
+//  glMatrixMode(GL_MODELVIEW);
+  glRotatef(90.0,1.0,0.0,0.0);
+  glTranslatef(0,0,-11);
+
+  glCallList(myDisplayList);
+
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
