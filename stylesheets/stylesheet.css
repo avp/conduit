@@ -97,6 +97,10 @@ p {
   margin: 10px 0 15px 0;
 }
 
+b {
+  font-weight: 700 !important;
+}
+
 footer p {
   color: #f2f2f2;
 }
@@ -163,7 +167,7 @@ pre, code {
   background-color: #fff;
 
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  font-size: 14px;
+  font-size: 12px;
 
   border-radius: 2px;
   -moz-border-radius: 2px;
@@ -172,14 +176,15 @@ pre, code {
 
 pre {
   width: 600px;
-  padding: 10px;
+  margin: 0;
+  padding: 0;
   box-shadow: 0 0 10px rgba(0,0,0,.1);
-  overflow: auto;
+  overflow: hidden;
 }
 
 code {
   padding: 3px;
-  margin: 0 3px;
+  margin: 0;
   box-shadow: 0 0 10px rgba(0,0,0,.1);
 }
 
