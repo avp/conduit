@@ -258,7 +258,7 @@ int Oculus2::run(int argc, char **argv)
     << "P: pause video updates\n"
     << "+/- (keypad): increase/decrease blur\n"
     << "U: use prediction\n"
-    << "F: fovea\n"
+    << "V: fovea\n"
     // << "o: toggle OLED overdrive (default: on)\n"
     // << "l: toggle low persistence display (default: on)\n"
     // << "v: toggle vignette (default: on)\n"
@@ -308,7 +308,6 @@ int Oculus2::run(int argc, char **argv)
     }
 
     if (timestamp > 0) {
-      std::cout << timestamp << std::endl;
       double mtpTime = Timer::timeInSeconds() - timestamp;
       ASSERT(mtpTime > 0);
       mtpProfiler.addSample(mtpTime);
