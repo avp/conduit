@@ -13,7 +13,9 @@ const float PITCH_MULTIPLIER = 90.0 / 50.0;
 
 const bool USE_OPTIMIZER = true;
 
-const int OPTIMIZER_QUEUE_SIZE = 10;
+const int VIDEOREADER_QUEUE_SIZE = 30;
+
+const int OPTIMIZER_QUEUE_SIZE = 30;
 
 // Optimizer settings
 const int CROP_ANGLE = 180;

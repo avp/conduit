@@ -38,34 +38,38 @@ class Timer {
 
 static const int MAX_SAMPLES = 50;
 
-class FramerateProfiler {
+class RollingAverage {
   public:
-    FramerateProfiler() {
+    RollingAverage() {
       for (int i = 0; i < MAX_SAMPLES; i++) {
         ticklist[i] = 0;
       }
     }
 
-    void startFrame() {
-      frameStart = Timer::timeInSeconds();
-    }
-
-    void endFrame() {
-      profileFrame(Timer::timeInSeconds() - frameStart);
-    }
-
-    double getFramerate() {
+    double getAverageReciprocal() {
       if (ticksum == 0)
         return 0;
 
       return samplesCollected/ticksum;
     }
 
-    double getAverageTimeMillis() {
+    double getAverage() {
       if (samplesCollected == 0)
         return 0;
 
-      return 1000 * ticksum/samplesCollected;
+      return ticksum/samplesCollected;
+    }
+
+    /* average will ramp up until the buffer is full */
+    /* returns average ticks per frame over the MAXSAMPPLES last frames */
+    void addSample(double sample)
+    {
+        ticksum -= ticklist[tickindex];  /* subtract value falling off */
+        ticksum += sample;              /* add new value */
+        ticklist[tickindex] = sample;   /* save new value so it can be subtracted later */
+        tickindex = (tickindex + 1) % MAX_SAMPLES;
+        if (samplesCollected < MAX_SAMPLES)
+          samplesCollected++;
     }
 
   private:
@@ -73,19 +77,36 @@ class FramerateProfiler {
     double ticksum = 0;
     double ticklist[MAX_SAMPLES];
     int samplesCollected = 0;
+
+};
+
+class FramerateProfiler {
+
+  public:
+    FramerateProfiler() {
+
+    }
+
+    void startFrame() {
+      frameStart = Timer::timeInSeconds();
+    }
+
+    void endFrame() {
+      myRollingAverage.addSample(Timer::timeInSeconds() - frameStart);
+    }
+
+    double getFramerate() {
+      return myRollingAverage.getAverageReciprocal();
+    }
+
+    double getAverageTimeMillis() {
+      return myRollingAverage.getAverage();
+    }
+
+  private:
+    RollingAverage myRollingAverage;
     double frameStart = 0;
 
-    /* average will ramp up until the buffer is full */
-    /* returns average ticks per frame over the MAXSAMPPLES last frames */
-    void profileFrame(double frameTime)
-    {
-        ticksum -= ticklist[tickindex];  /* subtract value falling off */
-        ticksum += frameTime;              /* add new value */
-        ticklist[tickindex] = frameTime;   /* save new value so it can be subtracted later */
-        tickindex = (tickindex + 1) % MAX_SAMPLES;
-        if (samplesCollected < MAX_SAMPLES)
-          samplesCollected++;
-    }
 };
 
 #endif

@@ -10,6 +10,11 @@ using cv::Size;
 
 int BLUR_FACTOR = BLUR_NORMAL;
 
+FrameData::FrameData(const cv::Mat& image, double timestamp) {
+  this->image = image;
+  this->timestamp = timestamp;
+}
+
 OptimizedImage::OptimizedImage(const cv::Mat& focusedTop,
     const cv::Mat& focusedBot,
     const cv::Mat& blurred,
@@ -225,8 +230,12 @@ OptimizerPipeline::OptimizerPipeline(VideoReader* vr) {
   bufferThread.detach();
 }
 
-cv::Mat OptimizerPipeline::getFrame() {
-  cv::Mat frame = frameQueue.dequeue();
+int OptimizerPipeline::getNumFramesAvailable() {
+  return frameQueue.size();
+}
+
+FrameData OptimizerPipeline::getFrame() {
+  FrameData frame = frameQueue.dequeue();
   pthread_cond_signal(&queueCond);
   return frame;
 }
@@ -246,8 +255,17 @@ void OptimizerPipeline::bufferFrames(VideoReader* vr) {
       return;
     }
 
-    frame = Optimizer::processImage(frame, hAngle, vAngle);
-    frameQueue.enqueue(frame);
+    hmdDataMutex.lock();
+    int hAngleCached = hAngle;
+    int vAngleCached = vAngle;
+    double lastUpdatedCached = lastUpdated;
+    hmdDataMutex.unlock();
+
+    frame = Optimizer::processImage(frame, hAngleCached, vAngleCached);
+
+    FrameData fd(frame, lastUpdatedCached);
+
+    frameQueue.enqueue(fd);
     frameAvailable = true;
   }
 }

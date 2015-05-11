@@ -27,7 +27,7 @@ void VideoReader::bufferFrames(const std::string& filename) {
   int framesBuffered = 0;
   int framesDropped = 0;
   while (true) {
-    if (frameQueue.size() > 10) {
+    if (frameQueue.size() > VIDEOREADER_QUEUE_SIZE) {
       pthread_mutex_lock(&queueLock);
       pthread_cond_wait(&queueCond, &queueLock);
       pthread_mutex_unlock(&queueLock);
@@ -82,6 +82,10 @@ cv::Mat VideoReader::getFrame() {
   }
 #endif
   return frame;
+}
+
+int VideoReader::getNumFramesAvailable() {
+  return frameQueue.size();
 }
 
 

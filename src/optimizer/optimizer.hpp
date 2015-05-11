@@ -16,6 +16,14 @@
 #include "../settings.hpp"
 #include "../videoreader/videoreader.hpp"
 
+class FrameData {
+  public:
+    FrameData(const cv::Mat& image, double timestamp);
+
+    cv::Mat image;
+    double timestamp;
+};
+
 class OptimizedImage {
   friend class Optimizer;
 
@@ -51,14 +59,17 @@ class Optimizer {
 class OptimizerPipeline {
   public:
     OptimizerPipeline(VideoReader* vr);
-    cv::Mat getFrame();
+    FrameData getFrame();
     bool isFrameAvailable();
-    int hAngle = 0;
-    int vAngle = 90;
+    volatile int hAngle = 0;
+    volatile int vAngle = 90;
+    volatile double lastUpdated = 0;
+    std::mutex hmdDataMutex;
+    int getNumFramesAvailable();
 
   private:
     void bufferFrames(VideoReader* vr);
-    WorkQueue<cv::Mat> frameQueue;
+    WorkQueue<FrameData> frameQueue;
     pthread_cond_t queueCond;
     pthread_mutex_t queueLock;
     std::thread bufferThread;
