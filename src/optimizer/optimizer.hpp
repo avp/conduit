@@ -73,6 +73,7 @@ class OptimizerPipeline {
     pthread_cond_t queueCond;
     pthread_mutex_t queueLock;
     std::thread bufferThread;
+    std::thread bufferThread2;
     bool fullyBuffered;
     bool frameAvailable;
 };
