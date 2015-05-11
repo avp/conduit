@@ -69,7 +69,8 @@
     <p>
       This requires a very high amount of bandwidth &mdash; at least 25 Mbps,
       <a href="https://help.netflix.com/en/node/13444">according to Netflix</a>.
-      However, according to Akamai, the average American internet speed is about 10 Mbps.
+      However, <a href="http://www.scribd.com/doc/259862003/State-of-the-Internet-Report-Q4-2014">according to Akamai</a>,
+      the average American internet speed is about 11 Mbps.
       In addition, while 4G internet can get almost to the 4K streaming point,
       <a href="https://bgr.com/2013/03/11/4g-network-speeds-368339/">at 20 Mbps down</a>,
       on average it's a lot lower.
@@ -349,8 +350,20 @@ while (videoFrameAvailable()) {
   frameQueue.enqueue(frame);
 }</code></pre>
 
+    <h3>Optimization 5: Pose Prediction</h3>
+
     <p>
-      <b>Further optimizations are pending writeup.</b>
+      Our optimizer works by taking the HMD’s orientation, and then turning it into an OptimizedFrame.
+      This frame then has to go through the Optimizer->Renderer queue, and then arrive at the main rendering call.
+      But by the time this has happened, about 70ms have passed (this is motion-to-update time),
+      and the data the OptimizedFrame was based on is out of date.
+    </p>
+
+    <p>
+      So, we automatically measure motion-to-update, and then feed the optimizer orientation data predicted into the future.
+      In other words, we view-optimize the frame for where your head will be when you see it.
+      Prediction is provided by the Oculus SDK, but Oculus clamps predictions to 100ms in the future,
+      so we have trouble with spikes, but fortunately we’re under 70ms M2U on average
     </p>
 
   </section>
