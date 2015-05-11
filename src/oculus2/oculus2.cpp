@@ -56,6 +56,7 @@ static float OculusZAngle = 0;
 static float OculusPitchAngle = 0;
 
 static GLuint myDisplayList;
+static bool UsePrediction = true;
 
 static inline float getHorizontalAngleForOptimize() {
   return -(OculusZAngle + ourAngle) + 180;
@@ -256,6 +257,7 @@ int Oculus2::run(int argc, char **argv)
     << "T: timewarp\n"
     << "P: pause video updates\n"
     << "+/- (keypad): increase/decrease blur\n"
+    << "U: use prediction\n"
     // << "o: toggle OLED overdrive (default: on)\n"
     // << "l: toggle low persistence display (default: on)\n"
     // << "v: toggle vignette (default: on)\n"
@@ -559,6 +561,11 @@ void toggle_hmd_fullscreen(void)
 
 void updatePipelineOrientation(OptimizerPipeline& pipeline, double offsetIntoFuture) {
   REQUIRES(offsetIntoFuture >= 0);
+  if (offsetIntoFuture >= 0.09)
+    offsetIntoFuture = 0.09;
+  if (!UsePrediction)
+    offsetIntoFuture = 0;
+
   // Query the HMD for the current tracking state.
   ovrTrackingState ts  = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds() + offsetIntoFuture);
   OVR::Quatf q(ts.HeadPose.ThePose.Orientation);
@@ -782,6 +789,11 @@ int key_event(int key, int state)
     case SDLK_KP_MINUS:
       BLUR_FACTOR = BLUR_FACTOR > 1 ? BLUR_FACTOR - 1 : 1;
       std::cout << "blur " << BLUR_FACTOR << "\n";
+      break;
+
+    case 'u':
+      UsePrediction = !UsePrediction;
+      printf("usePrediction=%d\n", UsePrediction);
       break;
 
     case 'b':
