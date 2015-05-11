@@ -23,6 +23,7 @@ const int H_FOCUS_ANGLE = 30;
 const int V_FOCUS_ANGLE = 30;
 const int BLUR_NORMAL = 3;
 const int BLUR_HIGH = 20;
+const int BLUR_NONE = 1;
 extern int BLUR_FACTOR;
 
 

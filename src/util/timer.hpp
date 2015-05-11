@@ -60,16 +60,25 @@ class RollingAverage {
       return ticksum/samplesCollected;
     }
 
+    double getLifetimeAverage() {
+      if (lifetimeSamples == 0)
+        return 0;
+
+      return lifetimeSum / lifetimeSamples;
+    }
+
     /* average will ramp up until the buffer is full */
     /* returns average ticks per frame over the MAXSAMPPLES last frames */
     void addSample(double sample)
     {
-        ticksum -= ticklist[tickindex];  /* subtract value falling off */
-        ticksum += sample;              /* add new value */
-        ticklist[tickindex] = sample;   /* save new value so it can be subtracted later */
-        tickindex = (tickindex + 1) % MAX_SAMPLES;
-        if (samplesCollected < MAX_SAMPLES)
-          samplesCollected++;
+      lifetimeSamples++;
+      lifetimeSum += sample;
+      ticksum -= ticklist[tickindex];  /* subtract value falling off */
+      ticksum += sample;              /* add new value */
+      ticklist[tickindex] = sample;   /* save new value so it can be subtracted later */
+      tickindex = (tickindex + 1) % MAX_SAMPLES;
+      if (samplesCollected < MAX_SAMPLES)
+        samplesCollected++;
     }
 
   private:
@@ -77,6 +86,9 @@ class RollingAverage {
     double ticksum = 0;
     double ticklist[MAX_SAMPLES];
     int samplesCollected = 0;
+
+    int lifetimeSamples = 0;
+    double lifetimeSum = 0;
 
 };
 
@@ -100,7 +112,7 @@ class FramerateProfiler {
     }
 
     double getAverageTimeMillis() {
-      return myRollingAverage.getAverage();
+      return 1000 * myRollingAverage.getAverage();
     }
 
   private:

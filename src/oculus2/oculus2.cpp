@@ -47,9 +47,8 @@ static float xPos = 0, yPos = 0, zPos = 0, ourAngle = 0;
 static TextureData textureLeft;
 static TextureData textureRight;
 
-static bool nextFrame = false;
 static bool three_d_enabled = true;
-const static bool FROZEN = false;
+static bool FROZEN = false;
 const static int ROTATION_GRANULARITY = 20;
 
 static float OculusZAngle = 0;
@@ -75,8 +74,6 @@ static FramerateProfiler glTextureProfiler;
 // TextureData
 
 TextureData::TextureData() {
-  // TODO: this shouldn't be copied, right?
-  std::cout << "TextureData created" << std::endl;
 }
 
 void TextureData::init() {
@@ -85,8 +82,6 @@ void TextureData::init() {
   glGenTextures(1, &this->name);
   glGenBuffers(1, &this->pbo);
 
-  // TODO: does this have to be done all the time?
-  // or is just once here ok
   glBindTexture(GL_TEXTURE_2D, this->name);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -241,6 +236,20 @@ int Oculus2::run(int argc, char **argv)
       return 1;
   }
 
+  std::cout 
+    << "Q/E: manually rotate left/right\n"
+    << "R/Space: recenter\n"
+    << "B: high blur\n"
+    << "N: no blur\n"
+    << "G: 3D\n"
+    << "T: timewarp\n"
+    << "P: pause video updates\n"
+    << "+/- (keypad): increase/decrease blur\n"
+    // << "o: toggle OLED overdrive (default: on)\n"
+    // << "l: toggle low persistence display (default: on)\n"
+    // << "v: toggle vignette (default: on)\n"
+  ;
+
   if (init() == -1) {
     return 1;
   }
@@ -268,6 +277,7 @@ int Oculus2::run(int argc, char **argv)
   RollingAverage ofc;
 
   bool isFirstFrame = true;
+  double totalRunStart = Timer::timeInSeconds();
 
   while (true) {
     profiler.startFrame();
@@ -295,8 +305,6 @@ int Oculus2::run(int argc, char **argv)
     displayProfiler.startFrame();
     display(pipeline);
     displayProfiler.endFrame();
-
-    profiler.endFrame();
 
     double now = Timer::timeInSeconds();
     if (now - lastFPSAnnouncement > 2) {
@@ -326,6 +334,8 @@ int Oculus2::run(int argc, char **argv)
       }
     }
     sdlProfiler.endFrame();
+
+    profiler.endFrame();
   }
 
 done:
@@ -348,7 +358,7 @@ int init(void)
 
   x = y = SDL_WINDOWPOS_UNDEFINED;
   flags = SDL_WINDOW_OPENGL;
-  if(!(win = SDL_CreateWindow("press 'f' to move to the HMD", x, y, 1024, 640, flags))) {
+  if(!(win = SDL_CreateWindow("Conduit", x, y, 1024, 640, flags))) {
     fprintf(stderr, "failed to create window\n");
     return -1;
   }
@@ -734,22 +744,39 @@ int key_event(int key, int state)
     case 27:
       return -1;
 
-    case SDLK_RETURN:
-      nextFrame = true;
-      printf("next frame\n");
+    case SDLK_KP_PLUS:
+      BLUR_FACTOR += 1;
+      std::cout << "blur " << BLUR_FACTOR << "\n";
       break;
 
-    case SDLK_b:
+    case SDLK_KP_MINUS:
+      BLUR_FACTOR = BLUR_FACTOR > 1 ? BLUR_FACTOR - 1 : 1;
+      std::cout << "blur " << BLUR_FACTOR << "\n";
+      break;
+
+    case 'b':
       if (BLUR_FACTOR == BLUR_HIGH)
         BLUR_FACTOR = BLUR_NORMAL;
       else
         BLUR_FACTOR = BLUR_HIGH;
       break;
 
+    case 'n':
+      if (BLUR_FACTOR == BLUR_NONE)
+        BLUR_FACTOR = BLUR_NORMAL;
+      else
+        BLUR_FACTOR = BLUR_NONE;
+      break;
+
     case ' ':
     case 'r':
       /* allow the user to recenter by pressing space */
       ovrHmd_RecenterPose(hmd);
+      break;
+
+    case 'p':
+      FROZEN = !FROZEN;
+      printf("Toggling frozen to %d\n", FROZEN);
       break;
 
     case 'g':
