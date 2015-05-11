@@ -233,8 +233,8 @@ OptimizerPipeline::OptimizerPipeline(VideoReader* vr) {
   bufferThread = std::thread(&OptimizerPipeline::bufferFrames, this, vr);
   bufferThread.detach();
 
-//  bufferThread2 = std::thread(&OptimizerPipeline::bufferFrames, this, vr);
-//  bufferThread2.detach();
+ // bufferThread2 = std::thread(&OptimizerPipeline::bufferFrames, this, vr);
+ // bufferThread2.detach();
 }
 
 int OptimizerPipeline::getNumFramesAvailable() {
@@ -272,7 +272,7 @@ void OptimizerPipeline::bufferFrames(VideoReader* vr) {
 
     FrameData fd(frame, lastUpdatedCached);
 
-    frameQueue.enqueue(fd);
+    frameQueue.enqueue(fd, -lastUpdatedCached);
     frameAvailable = true;
   }
 }

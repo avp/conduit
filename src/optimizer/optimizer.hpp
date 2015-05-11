@@ -15,10 +15,15 @@
 #include "../contracts.h"
 #include "../settings.hpp"
 #include "../videoreader/videoreader.hpp"
+#include "../util/work_pq.h"
 
 class FrameData {
   public:
     FrameData(const cv::Mat& image, double timestamp);
+
+    FrameData( const FrameData& other ) :
+         image( other.image ), timestamp( other.timestamp )
+      {}
 
     cv::Mat image;
     double timestamp;
@@ -69,7 +74,7 @@ class OptimizerPipeline {
 
   private:
     void bufferFrames(VideoReader* vr);
-    WorkQueue<FrameData> frameQueue;
+    WorkPQ<FrameData> frameQueue;
     pthread_cond_t queueCond;
     pthread_mutex_t queueLock;
     std::thread bufferThread;
