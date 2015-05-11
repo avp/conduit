@@ -15,7 +15,8 @@ using cv::Mat;
 static int init(void);
 static void cleanup(void);
 static void toggle_hmd_fullscreen(void);
-static void display(OptimizerPipeline& pipeline);
+static void display();
+static void updatePipelineOrientation(OptimizerPipeline& pipeline, double offsetIntoFuture);
 static void draw_scene(ovrEyeType);
 static void update_rtarg(int width, int height);
 static int handle_event(SDL_Event *ev);
@@ -179,7 +180,7 @@ static void checkGLError(const char *file, int line) {
 
 #ifdef USE_OPTIMIZER_PIPELINE
 static double updateVideoFrame(OptimizerPipeline& pipeline, bool firstFrame) {
-  
+
   // on the first frame, we want to wait till the video starts
   if (!firstFrame && !pipeline.isFrameAvailable()) {
     glTextureProfiler.startFrame();
@@ -246,7 +247,7 @@ int Oculus2::run(int argc, char **argv)
     std::cout << "time limit " << secondsToRun << " seconds\n";
   }
 
-  std::cout 
+  std::cout
     << "Q/E: manually rotate left/right\n"
     << "R/Space: recenter\n"
     << "B: high blur\n"
@@ -313,8 +314,10 @@ int Oculus2::run(int argc, char **argv)
     ofc.addSample(pipeline.getNumFramesAvailable());
 
     displayProfiler.startFrame();
-    display(pipeline);
+    display();
     displayProfiler.endFrame();
+    double mtuTime = mtpProfiler.getAverage();
+    updatePipelineOrientation(pipeline, mtuTime); // TODO: optimal placement?
 
     double now = Timer::timeInSeconds();
     if (now - lastFPSAnnouncement > 2) {
@@ -328,7 +331,7 @@ int Oculus2::run(int argc, char **argv)
       // << " + " << std::setw(7) << loadTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
       << " + " << std::setw(7) << glTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
       << " + " << std::setw(7) << videoReadProfiler.getAverageTimeMillis() << " (readVideo)"
-      << ";    M2U=" << std::setw(7) << 1000 * mtpProfiler.getAverage() << "    "
+      << ";    M2U=" << std::setw(7) << 1000 * mtuTime << "    "
       << "VRQ=" << std::setw(5) << vrfc.getAverage() << "    "
       << "OQ=" << std::setw(5) << ofc.getAverage() << "    "
       << std::endl;
@@ -554,7 +557,24 @@ void toggle_hmd_fullscreen(void)
   }
 }
 
-void display(OptimizerPipeline& pipeline)
+void updatePipelineOrientation(OptimizerPipeline& pipeline, double offsetIntoFuture) {
+  REQUIRES(offsetIntoFuture >= 0);
+  // Query the HMD for the current tracking state.
+  ovrTrackingState ts  = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds() + offsetIntoFuture);
+  OVR::Quatf q(ts.HeadPose.ThePose.Orientation);
+  float yaw = 0, pitch = 0, roll = 0;
+  q.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
+  OculusZAngle = yaw * MATH_DOUBLE_RADTODEGREEFACTOR;
+  OculusPitchAngle = pitch * MATH_DOUBLE_RADTODEGREEFACTOR;
+
+  pipeline.hmdDataMutex.lock();
+  pipeline.lastUpdated = Timer::timeInSeconds();
+  pipeline.hAngle = getHorizontalAngleForOptimize();
+  pipeline.vAngle = getVerticalAngleForOptimize();
+  pipeline.hmdDataMutex.unlock();
+}
+
+void display()
 {
   int i;
   ovrMatrix4f proj;
@@ -596,22 +616,6 @@ void display(OptimizerPipeline& pipeline)
     pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    if (i == 0) {
-      // One iteration only, update the angles
-      // Do it the first iteration to supply data as soon as possible
-      OVR::Quatf q(pose[eye].Orientation);
-      float yaw = 0, pitch = 0, roll = 0;
-      q.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
-      OculusZAngle = yaw * MATH_DOUBLE_RADTODEGREEFACTOR;
-      OculusPitchAngle = pitch * MATH_DOUBLE_RADTODEGREEFACTOR;
-
-      pipeline.hmdDataMutex.lock();
-      pipeline.lastUpdated = Timer::timeInSeconds();
-      pipeline.hAngle = getHorizontalAngleForOptimize();
-      pipeline.vAngle = getVerticalAngleForOptimize();
-      pipeline.hmdDataMutex.unlock();
-    }
 
     glTranslatef(eye_rdesc[eye].HmdToEyeViewOffset.x,
         eye_rdesc[eye].HmdToEyeViewOffset.y,
