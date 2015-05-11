@@ -180,6 +180,8 @@ static Mat uncropWrapped(const Mat& croppedImage, const int fullWidth, const int
   return fullImage;
 }
 
+bool FOVEA_DISPLAY = true;
+
 Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   Timer timer;
 
@@ -189,19 +191,21 @@ Mat Optimizer::extractImage(const OptimizedImage& optImage) {
   cv::resize(optImage.blurred, croppedImage, optImage.croppedSize);
   timer.stop("Expanding");
 
-  Mat tmp;
-  timer.start();
-  tmp = croppedImage(
-      Range(optImage.focusRow, optImage.focusRow + optImage.focusedTop.rows),
-      Range(optImage.focusCol, optImage.focusCol + optImage.focusedTop.cols));
-  optImage.focusedTop.copyTo(tmp);
-  tmp = croppedImage(
-      Range(optImage.focusRow + croppedImage.rows / 2,
-        optImage.focusRow + croppedImage.rows / 2 + optImage.focusedBot.rows),
-      Range(optImage.focusCol, optImage.focusCol + optImage.focusedBot.cols));
-  optImage.focusedBot.copyTo(tmp);
-  timer.stop("Reconstructing");
-
+  if (FOVEA_DISPLAY) {
+    Mat tmp;
+    timer.start();
+    tmp = croppedImage(
+        Range(optImage.focusRow, optImage.focusRow + optImage.focusedTop.rows),
+        Range(optImage.focusCol, optImage.focusCol + optImage.focusedTop.cols));
+    optImage.focusedTop.copyTo(tmp);
+    tmp = croppedImage(
+        Range(optImage.focusRow + croppedImage.rows / 2,
+          optImage.focusRow + croppedImage.rows / 2 + optImage.focusedBot.rows),
+        Range(optImage.focusCol, optImage.focusCol + optImage.focusedBot.cols));
+    optImage.focusedBot.copyTo(tmp);
+    timer.stop("Reconstructing");
+  }
+  
   // Reconstruct middle image
   Mat fullLeft, fullCenter, fullRight;
 

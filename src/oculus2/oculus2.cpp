@@ -258,6 +258,7 @@ int Oculus2::run(int argc, char **argv)
     << "P: pause video updates\n"
     << "+/- (keypad): increase/decrease blur\n"
     << "U: use prediction\n"
+    << "F: fovea\n"
     // << "o: toggle OLED overdrive (default: on)\n"
     // << "l: toggle low persistence display (default: on)\n"
     // << "v: toggle vignette (default: on)\n"
@@ -796,11 +797,18 @@ int key_event(int key, int state)
       printf("usePrediction=%d\n", UsePrediction);
       break;
 
+    case 'v':
+      FOVEA_DISPLAY = !FOVEA_DISPLAY;
+      printf("fovea=%d\n", FOVEA_DISPLAY);
+      break;
+
     case 'b':
       if (BLUR_FACTOR == BLUR_HIGH)
         BLUR_FACTOR = BLUR_NORMAL;
       else
         BLUR_FACTOR = BLUR_HIGH;
+
+      std::cout << "blur " << BLUR_FACTOR << "\n";
       break;
 
     case 'n':
@@ -808,6 +816,8 @@ int key_event(int key, int state)
         BLUR_FACTOR = BLUR_NORMAL;
       else
         BLUR_FACTOR = BLUR_NONE;
+
+      std::cout << "blur " << BLUR_FACTOR << "\n";
       break;
 
     case ' ':
@@ -831,11 +841,11 @@ int key_event(int key, int state)
       toggle_hmd_fullscreen();
       break;
 
-    case 'v':
-      distort_caps ^= ovrDistortionCap_Vignette;
-      printf("Vignette: %s\n", distort_caps & ovrDistortionCap_Vignette ? "on" : "off");
-      ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc);
-      break;
+    // case 'v':
+    //   distort_caps ^= ovrDistortionCap_Vignette;
+    //   printf("Vignette: %s\n", distort_caps & ovrDistortionCap_Vignette ? "on" : "off");
+    //   ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc);
+    //   break;
 
     case 't':
       distort_caps ^= ovrDistortionCap_TimeWarp;
