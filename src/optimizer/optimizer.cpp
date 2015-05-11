@@ -10,9 +10,10 @@ using cv::Size;
 
 int BLUR_FACTOR = BLUR_NORMAL;
 
-FrameData::FrameData(const cv::Mat& image, double timestamp) {
+FrameData::FrameData(const cv::Mat& image, double timestamp, double optimizeTime) {
   this->image = image;
   this->timestamp = timestamp;
+  this->optimizeTime = optimizeTime;
 }
 
 OptimizedImage::OptimizedImage(const cv::Mat& focusedTop,
@@ -268,9 +269,10 @@ void OptimizerPipeline::bufferFrames(VideoReader* vr) {
     double lastUpdatedCached = lastUpdated;
     hmdDataMutex.unlock();
 
+    double optimizeStart = Timer::timeInSeconds();
     frame = Optimizer::processImage(frame, hAngleCached, vAngleCached);
 
-    FrameData fd(frame, lastUpdatedCached);
+    FrameData fd(frame, lastUpdatedCached, Timer::timeInSeconds() - optimizeStart);
 
     frameQueue.enqueue(fd);
     frameAvailable = true;

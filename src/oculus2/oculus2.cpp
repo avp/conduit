@@ -72,6 +72,7 @@ static FramerateProfiler displayProfiler;
 static FramerateProfiler sdlProfiler;
 static FramerateProfiler optimizeProfiler;
 static FramerateProfiler glTextureProfiler;
+static RollingAverage optimizeAverage;
 
 // TextureData
 
@@ -196,6 +197,7 @@ static double updateVideoFrame(OptimizerPipeline& pipeline, bool firstFrame) {
 
   FrameData fd = pipeline.getFrame();
   Mat image = fd.image;
+  optimizeAverage.addSample(fd.optimizeTime);
 
   if (!firstFrame)
     videoReadProfiler.endFrame();
@@ -335,6 +337,7 @@ int Oculus2::run(int argc, char **argv)
       << " + " << std::setw(7) << glTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
       << " + " << std::setw(7) << videoReadProfiler.getAverageTimeMillis() << " (readVideo)"
       << ";    M2U=" << std::setw(7) << 1000 * mtuTime << "    "
+      << "optimize=" << std::setw(7) << 1000 * optimizeAverage.getAverage() << "    "
       << "VRQ=" << std::setw(5) << vrfc.getAverage() << "    "
       << "OQ=" << std::setw(5) << ofc.getAverage() << "    "
       << std::endl;

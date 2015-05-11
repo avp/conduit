@@ -18,10 +18,11 @@
 
 class FrameData {
   public:
-    FrameData(const cv::Mat& image, double timestamp);
+    FrameData(const cv::Mat& image, double timestamp, double optimizeTime);
 
     cv::Mat image;
     double timestamp;
+    double optimizeTime;
 };
 
 class OptimizedImage {
