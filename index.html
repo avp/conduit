@@ -97,27 +97,42 @@
       and so we introduce multiple techniques to mitigate this by adaptively changing the compression parameters and taking advantage of the GPU to reduce latency.
     </p>
 
-    <h2>Preliminary Results</h2>
+    <!--<h2>Preliminary Results</h2>-->
 
-    <p>
-      We have a baseline working renderer that can read videos and render them to the Oculus.
-      The frames are view optimized, and they account for the rotation of the viewer’s head.
-      With our view optimization, we compress images to less than 20% of their original size.
-    </p>
+    <!--<p>-->
+      <!--We have a baseline working renderer that can read videos and render them to the Oculus.-->
+      <!--The frames are view optimized, and they account for the rotation of the viewer’s head.-->
+      <!--With our view optimization, we compress images to about 10% of their original size.-->
+    <!--</p>-->
 
-    <p>
-      Additionally, we’ve made optimizations that, as much as we can measure now,
-      reduce the average time per frame from 140ms as measured on a Samsung Chronos 7 with Nvidia GT 630M, to 90 ms.
-    </p>
+    <!--<p>-->
+      <!--To simulate a client-server setup, we had our optimizer optimize a given frame,-->
+      <!--and then extract the unoptimized image to figure out how much time it would take.-->
+      <!--Optimization is a process that takes the viewer’s head position and the video frame,-->
+      <!--and gives back a smaller data structure that contains the optimized image.-->
+      <!--The optimized image would be sent over a network.-->
+      <!--The client would then extract the image and display it on the HMD.-->
+    <!--</p>-->
 
-    <p>
-      To simulate a client-server setup, we had our optimizer optimize a given frame,
-      and then extract the unoptimized image to figure out how much time it would take.
-      Optimization is a process that takes the viewer’s head position and the video frame,
-      and gives back a smaller data structure that contains the optimized image.
-      The optimized image would be sent over a network.
-      The client would then extract the image and display it on the HMD.
-    </p>
+    <!--<p>-->
+      <!--Additionally, we’ve made optimizations that, as much as we can measure now,-->
+      <!--reduce the average time per frame from 140ms as measured on a Samsung Chronos 7 with Nvidia GT 630M, to 90 ms.-->
+      <!--We measured motion to update (M2U) latency,-->
+      <!--which is the time from when you move your head to when you see the updated image appear on the HMD.-->
+    <!--</p>-->
+
+    <!--<p>-->
+      <!--When viewing the video through the Oculus, we did not notice the blurring that was done outside of the focused region of the frame.-->
+      <!--Our blur factor for the final test was only 3, which wasn’t noticeable on the edges of our vision.-->
+      <!--When we turn quickly, the screen never goes noticeably black on the edges where it’s been cropped.-->
+    <!--</p>-->
+
+    <!--<p>-->
+      <!--Through the optimizations, our motion to update latency was reduced from 150ms to 75ms.-->
+      <!--This resulted in a frame rate of 50 FPS, or about 19 ms/frame.-->
+      <!--12ms were spent on display, and 7ms were spent loading the texture.-->
+      <!--Video reading and optimization take almost no time, because we hide latency by pipelining those operations.-->
+    <!--</p>-->
 
     <h2>Technologies</h2>
 
@@ -360,10 +375,67 @@ while (videoFrameAvailable()) {
     </p>
 
     <p>
-      So, we automatically measure motion-to-update, and then feed the optimizer orientation data predicted into the future.
-      In other words, we view-optimize the frame for where your head will be when you see it.
+      So, we automatically measure motion-to-update (M2U), and then feed the optimizer orientation data predicted into the future.
+      In other words, we view optimize the frame for where your head will be when you see it.
       Prediction is provided by the Oculus SDK, but Oculus clamps predictions to 100ms in the future,
       so we have trouble with spikes, but fortunately we’re under 70ms M2U on average
+    </p>
+
+    <h2>Results</h2>
+
+    <p>
+      We ran our demo on a Samsung Chronos 7 laptop with a Nvidia GT 630M on Ubuntu 14.10.
+      We ran it for 2 minutes while wearing it and looking around.
+      It outputs averages of all the statistics we gave hee.
+    </p>
+
+    <p>
+      We used the Oculus rift to run Conduit and took qualitative measurements, as well as key time metrics.
+      We measured motion to update (M2U) latency, which is the time from when you move your head to when you see the updated image appear on the HMD.
+    </p>
+
+    <!-- TODO Performance results -->
+
+    <p>
+      When viewing the video through the Oculus, we did not notice the blurring that was done outside of the focused region of the frame.
+      Our blur factor for the final test was only 3, which wasn’t noticeable on the edges of our vision.
+      When we turn quickly, the screen never goes noticeably black on the edges where it’s been cropped.
+    </p>
+
+    <p>
+      We got a motion-to-update latency of 75ms.
+      Also, our optimizations brought the time per frame down from 150ms/frame (6 FPS)  to about 19ms/frame (~50 FPS).
+      12ms were spent on display, and 7ms were spent loading the texture.
+      Video reading and optimization take almost no time, because we hide latency by pipelining those operations.
+    </p>
+
+    <!-- TODO IMPORTANT: What limited speedup? Provide data and measurements. -->
+    <!-- This is a good way to get credit even if we didn't accomplish our objective. -->
+    <!-- Deeper analysis talks about execution time as distinct components, with proportions of time spent. -->
+
+    <!-- Optimization pipeline is bottleneck -->
+    <!-- Latency from blurring in optimization -->
+
+    <p>
+      The main bottleneck is the optimization pipeline.
+      Blurring and resizing the images is the overwhelming majority of time spent in the view optimizer.
+      In order to improve this, we could use the GPU for image resizing to try and make the resize operation faster.
+      To improve updating the orientation angle of the user’s head, we also added prediction of the future head position.
+      This greatly improved the lag when the user’s head moved quickly, because the optimization pipeline would optimize for the future.
+      We didn’t parallelize image resizing because we weren’t able to get OpenCV to run with CUDA support correctly.
+    </p>
+
+    <p>
+      Latency also arises from texture mapping the frames onto the cylinder using OpenGL. This takes 7ms of the 19ms motion to update latency, and the project could benefit from making it go faster.
+    </p>
+
+    <p>
+      The display function takes 12ms of the 19ms motion to update latency. OpenGL has to render the cylinder and that takes time. We could perform further optimizations on the display function to improve this time, such as reducing data transfer to the GPU.
+    </p>
+
+    <!-- TODO Was your choice of target machine sound? -->
+    <p>
+    Our choice of target machine was limited, so if we had used a better computer, we could have had faster render times.
     </p>
 
   </section>
