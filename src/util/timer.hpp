@@ -67,6 +67,13 @@ class RollingAverage {
       return lifetimeSum / lifetimeSamples;
     }
 
+    double getLifetimeAverageReciprocal() {
+      if (lifetimeSamples == 0)
+        return 0;
+
+      return lifetimeSamples / lifetimeSum;
+    }
+
     /* average will ramp up until the buffer is full */
     /* returns average ticks per frame over the MAXSAMPPLES last frames */
     void addSample(double sample)
@@ -111,8 +118,16 @@ class FramerateProfiler {
       return myRollingAverage.getAverageReciprocal();
     }
 
+    double getLifetimeFramerate() {
+      return myRollingAverage.getLifetimeAverageReciprocal();
+    }
+
     double getAverageTimeMillis() {
       return 1000 * myRollingAverage.getAverage();
+    }
+
+    double getLifetimeAverageMillis() {
+      return 1000 * myRollingAverage.getLifetimeAverage();
     }
 
   private:

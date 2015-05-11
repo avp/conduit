@@ -108,7 +108,6 @@ void TextureData::load(const Mat& input) {
   }
 #endif
 
-  glTextureProfiler.startFrame();
   if (loaded) {
     // The texture size should stay the same
     REQUIRES(image.cols == this->width);
@@ -162,7 +161,6 @@ void TextureData::load(const Mat& input) {
   }
 
   glBindTexture(GL_TEXTURE_2D, 0);
-  glTextureProfiler.endFrame();
 }
 
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
@@ -181,9 +179,15 @@ static void checkGLError(const char *file, int line) {
 
 #ifdef USE_OPTIMIZER_PIPELINE
 static double updateVideoFrame(OptimizerPipeline& pipeline, bool firstFrame) {
+  
   // on the first frame, we want to wait till the video starts
-  if (!firstFrame && !pipeline.isFrameAvailable())
+  if (!firstFrame && !pipeline.isFrameAvailable()) {
+    glTextureProfiler.startFrame();
+    glTextureProfiler.endFrame();
+    videoReadProfiler.startFrame();
+    videoReadProfiler.endFrame();
     return -1;
+  }
 
   if (!firstFrame)
     videoReadProfiler.startFrame();
@@ -194,12 +198,12 @@ static double updateVideoFrame(OptimizerPipeline& pipeline, bool firstFrame) {
   if (!firstFrame)
     videoReadProfiler.endFrame();
 
-  loadTextureProfiler.startFrame();
+  glTextureProfiler.startFrame();
   cv::Mat left = cv::Mat(image, cv::Range(0, image.rows / 2));
   cv::Mat right = cv::Mat(image, cv::Range(image.rows / 2, image.rows));
   textureLeft.load(left);
   textureRight.load(right);
-  loadTextureProfiler.endFrame();
+  glTextureProfiler.endFrame();
 
   return fd.timestamp;
 }
@@ -231,9 +235,15 @@ int Oculus2::run(int argc, char **argv)
   if (argc < 3) {
     std::cerr << "Usage: "
       << argv[0]
-      << " rendertest filename"
+      << " rendertest filename [secondsToRun]"
       << std::endl;
       return 1;
+  }
+
+  int secondsToRun = -1;
+  if (argc >= 4) {
+    secondsToRun = atoi(argv[3]);
+    std::cout << "time limit " << secondsToRun << " seconds\n";
   }
 
   std::cout 
@@ -309,22 +319,23 @@ int Oculus2::run(int argc, char **argv)
     double now = Timer::timeInSeconds();
     if (now - lastFPSAnnouncement > 2) {
       lastFPSAnnouncement = now;
-      profiler.getFramerate();
-      std::cout.precision(3);
 
+      std::cout.precision(2);
       std::cout
       << std::setw(7) << std::fixed << profiler.getFramerate() << " FPS = "
-      << std::setw(7) << profiler.getAverageTimeMillis() << "    "
-      // << "SDL=" << std::setw(7) << sdlProfiler.getAverageTimeMillis() << "    "
-      << "M2U=" << std::setw(7) << 1000 * mtpProfiler.getAverage() << "    "
-      << "display=" << std::setw(7) << displayProfiler.getAverageTimeMillis() << "    "
-      << "loadTexture=" << std::setw(7) << loadTextureProfiler.getAverageTimeMillis() << "    "
-      << "videoRead=" << std::setw(7) << videoReadProfiler.getAverageTimeMillis() << "    "
-      << "glTexture=" << std::setw(7) << glTextureProfiler.getAverageTimeMillis() << "    "
+      << std::setw(7) << profiler.getAverageTimeMillis() << " ms/frame = "
+      << std::setw(7) << displayProfiler.getAverageTimeMillis() << " (display)"
+      // << " + " << std::setw(7) << loadTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
+      << " + " << std::setw(7) << glTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
+      << " + " << std::setw(7) << videoReadProfiler.getAverageTimeMillis() << " (readVideo)"
+      << ";    M2U=" << std::setw(7) << 1000 * mtpProfiler.getAverage() << "    "
       << "VRQ=" << std::setw(5) << vrfc.getAverage() << "    "
       << "OQ=" << std::setw(5) << ofc.getAverage() << "    "
       << std::endl;
     }
+
+    if (secondsToRun > 0 && now - totalRunStart > secondsToRun)
+      goto done;
 
     sdlProfiler.startFrame();
     SDL_Event ev;
@@ -339,6 +350,21 @@ int Oculus2::run(int argc, char **argv)
   }
 
 done:
+  std::cout.precision(2);
+  std::cout
+  << "\n========== Lifetime Stats ==========\n"
+  << "Total time: " << (Timer::timeInSeconds() - totalRunStart) << "s\n"
+  << std::setw(7) << std::fixed << profiler.getLifetimeFramerate() << " FPS = "
+  << std::setw(7) << profiler.getLifetimeAverageMillis() << " = "
+  << std::setw(7) << displayProfiler.getLifetimeAverageMillis() << " (display)"
+  // << " + " << std::setw(7) << loadTextureProfiler.getAverageTimeMillis() << " (loadTexture)"
+  << " + " << std::setw(7) << glTextureProfiler.getLifetimeAverageMillis() << " (loadTexture)"
+  << " + " << std::setw(7) << videoReadProfiler.getLifetimeAverageMillis() << " (readVideo)"
+  << ";    M2U=" << std::setw(7) << 1000 * mtpProfiler.getLifetimeAverage() << "    "
+  << "VRQ=" << std::setw(5) << vrfc.getLifetimeAverage() << "    "
+  << "OQ=" << std::setw(5) << ofc.getLifetimeAverage()
+  << std::endl;
+
   cleanup();
   return 0;
 }

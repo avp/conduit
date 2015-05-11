@@ -15,7 +15,7 @@ const bool USE_OPTIMIZER = true;
 
 const int VIDEOREADER_QUEUE_SIZE = 30;
 
-const int OPTIMIZER_QUEUE_SIZE = 30;
+const int OPTIMIZER_QUEUE_SIZE = 20;
 
 // Optimizer settings
 const int CROP_ANGLE = 180;
