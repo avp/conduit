@@ -51,6 +51,8 @@
       <a href="proposal.html">[Proposal]</a>
       &nbsp;
       <a href="checkpoint.html">[Checkpoint]</a>
+      <br />
+      <a href="conduit_final_presentation.pdf" target="_blank">[Final Presentation PDF]</a>
     </h4>
 
     <h2>Problem</h2>
@@ -137,7 +139,7 @@
     <h2>Technologies</h2>
 
     <p>
-      We used <b>OpenCV</b> to read frames from the MP4 video file. The library handles video reading and decoding using FFMpeg.
+      We used <b>OpenCV</b> to read frames from the H.264-encoded MP4 video file. The library handles video reading and decoding using <b>FFMpeg</b>.
     </p>
 
     <p>
@@ -149,7 +151,7 @@
     </p>
 
     <p>
-      We also used the <b>Oculus Rift<</b> and its SDK. We sent our view-optimized images to the Oculus display where the video could be viewed.
+      We also used the <b>Oculus Rift</b> and its SDK. We sent our view-optimized images to the Oculus display where the video could be viewed.
     </p>
 
     <h2>Optimization</h2>
@@ -375,10 +377,11 @@ while (videoFrameAvailable()) {
     </p>
 
     <p>
-      So, we automatically measure motion-to-update (M2U), and then feed the optimizer orientation data predicted into the future.
-      In other words, we view optimize the frame for where your head will be when you see it.
-      Prediction is provided by the Oculus SDK, but Oculus clamps predictions to 100ms in the future,
-      so we have trouble with spikes, but fortunately we’re under 70ms M2U on average
+      So, we automatically measure motion-to-update time (M2U) using a rolling average.
+      We then feed this measurement to the Oculus SDK, which provides a prediction for where
+      the your head will be when you see the frame.
+      Note that Oculus clamps predictions to 100ms in the future,
+      so we have trouble with spikes, but fortunately we’re about 70ms M2U on average
     </p>
 
     <h2>Results</h2>
