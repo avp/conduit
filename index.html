@@ -372,55 +372,79 @@ while (videoFrameAvailable()) {
     <p>
       Our optimizer works by taking the HMD’s orientation, and then turning it into an OptimizedFrame.
       This frame then has to go through the Optimizer->Renderer queue, and then arrive at the main rendering call.
-      But by the time this has happened, about 70ms have passed (this is motion-to-update time),
-      and the data the OptimizedFrame was based on is out of date.
+      But by the time this has happened, about 70ms have passed (this is motion-to-update time, see results),
+      and the data the optimized frame was based on is out of date.
     </p>
 
     <p>
       So, we automatically measure motion-to-update time (M2U) using a rolling average.
-      We then feed this measurement to the Oculus SDK, which provides a prediction for where
-      the your head will be when you see the frame.
+      We then feed this measurement to the Oculus SDK, which provides a
+      <a href="https://www.oculus.com/blog/the-latent-power-of-prediction/" target="_blank">prediction</a>
+      for where your head will be when you see the frame.
       Note that Oculus clamps predictions to 100ms in the future,
-      so we have trouble with spikes, but fortunately we’re about 70ms M2U on average
+      so we have trouble with spikes, but fortunately we’re about 70ms M2U on average.
     </p>
 
+    <h3>Other miscellaneous optimizations</h3>
+    We performed several other optimizations such as optimizing for the API by removing unnecessary calls, using display lists, and etc, too small but numerous to list entirely here.
+
     <h2>Results</h2>
+
+    <h3>Experimental Setup</h3>
 
     <p>
       We ran our demo on a Samsung Chronos 7 laptop with a Nvidia GT 630M on Ubuntu 14.10.
       We ran it for 2 minutes while wearing it and looking around.
+      We used a <a href="http://photocreations.ca/3D/fountain-3D-4k.mp4" target="_blank">this video</a> from <a href="http://photocreations.ca/3D/" target="_blank">Photocreations</a>.
       It outputs averages of all the statistics we gave here.
+      Our code is available at
+      <a href="https://github.com/avp/conduit" target="_blank">avp/conduit</a>
+      .
+      To run our demo, we used:
+      <pre><code>./conduit oculus2 fountain-3D-4k.mp4</code></pre>
     </p>
 
     <p>
-      We used the Oculus rift to run Conduit and took qualitative measurements, as well as key time metrics.
-      We measured motion to update (M2U) latency, which is the time from when you move your head to when you see the updated image appear on the HMD.
+      We used an Oculus Rift DK2 to run Conduit and took qualitative measurements, as well as key time metrics.
+      We measured <b>motion to update (M2U) latency</b>, which is the time from when you move your head to when you see the view-optimized image for your new angle.
     </p>
 
-    <!-- TODO Performance results -->
+    <h3>Qualitative Results</h3>
 
     <p>
-      When viewing the video through the Oculus, we did not notice the blurring that was done outside of the focused region of the frame.
-      Our blur factor for the final test was only 3, which wasn’t noticeable on the edges of our vision.
-      When we turn quickly, the screen never goes noticeably black on the edges where it’s been cropped.
+      We found that blur was not particularly noticeable at <b>blur factor</b> (the factor by which we rescale each dimension of the image) 3, although you could "notice" it by toggling blur on and off, you didn't really care, and also, not having everything be in focus is more realistic.
+
+
+      It became more noticeable at 4 and 5. Although, this is just qualitative experience for us, other people may be different.
+
+      To test tracking, we turned blur factor up to 40 to make it really obvious where the focus window is, and tracking was quite responsive. Oculus's prediction helped quite a lot with responsiveness, and also, since the focus and crop regions are larger than necessary, we don't even need the 20 ms motion-to-photons latency.
+
+      Making the focus window larger helped a lot both when moving and stationary. Since it turns out the focus window is only a few percentage points of the entire video, this didn't even cost much.
     </p>
 
+    <h3>Quantitative Results</h3>
     <p>
-      The bandwidth requirement for streaming 3D 4K video was a minimum of 18 Mbps for H.264 encoded video.
-      With our view optimization, we cut that down to about 1.8 Mbps.
+      The bandwidth requirement for streaming 3D 4K video was a minimum of 18 Mbps for our specific H.264 encoded video.
+      Our view optimization compressed the image down in terms of raw pixels to 10% the size.
+
       Cropping removes 50% of the frame.
+      We shrink the image by a factor of 3 in each dimension, ke
       We blur the image by a factor of 9, and we only keep a 50&deg; by 50&deg; window in the middle of the frame (only 3% of the overall frame).
-      So, our view optimization leads to 10% bandwidth usage.
+
+      Assuming video compression is linear, we cut down bandwidth to 1.8 Mbps, making it much more accessible.
     </p>
 
     <p>
-      We got a motion-to-update latency of 75ms.
+      We got a motion-to-update latency of 75ms. This was comprised of about 50ms for view-optimization, and 25ms spent waiting in the buffer and miscellaneous overhead.
+
       Also, our optimizations brought the time per frame down from 150ms/frame (6 FPS)  to about 19ms/frame (~50 FPS).
       12ms were spent on display, and 7ms were spent loading the texture.
       Video reading and optimization take almost no time, because we hide latency by pipelining those operations.
     </p>
 
-    <!-- TODO IMPORTANT: What limited speedup? Provide data and measurements. -->
+    <h3>Bottlenecks and further areas of improvement</h3>
+
+    <!-- What limited speedup? Provide data and measurements. -->
     <!-- This is a good way to get credit even if we didn't accomplish our objective. -->
     <!-- Deeper analysis talks about execution time as distinct components, with proportions of time spent. -->
 
@@ -431,27 +455,62 @@ while (videoFrameAvailable()) {
       The main bottleneck is the optimization pipeline.
       Blurring and resizing the images is the overwhelming majority of time spent in the view optimizer.
       In order to improve this, we could use the GPU for image resizing to try and make the resize operation faster.
+      We wanted to accomplish this via OpenCV's CUDA mode, but unfortunately couldn't get it to build in time.
+
+      We also wanted to use
+      <a href="http://docs.nvidia.com/cuda/video-decoder/" target="_blank">NVIDIA's CUDA Decoder</a>,
+      to get GPU accelerated decoding.
+      Also, by doing both of these steps on the GPU, we could <b>keep intermediary data on the GPU</b>.
+
       To improve updating the orientation angle of the user’s head, we also added prediction of the future head position.
       This greatly improved the lag when the user’s head moved quickly, because the optimization pipeline would optimize for the future.
-      We didn’t parallelize image resizing because we weren’t able to get OpenCV to run with CUDA support correctly.
     </p>
 
     <p>
-      Latency also arises from texture mapping the frames onto the cylinder using OpenGL. This takes 7ms of the 19ms motion to update latency, and the project could benefit from making it go faster.
+      Latency also arises from texture mapping the frames onto the cylinder using OpenGL.
+      This takes 7ms of the 19ms motion to update latency, and the project could benefit from making it go faster.
+      We could also try reducing the data transfer into the texture, since most of it is black.
+      Although performing all view-optimization compression and decompression on the GPU would
+      obviate the need for this.
     </p>
 
     <p>
-      The display function takes 12ms of the 19ms motion to update latency. OpenGL has to render the cylinder and that takes time. We could perform further optimizations on the display function to improve this time, such as reducing data transfer to the GPU.
+      Although we've tried to incorporate as much modern graphics programming as we had time to learn and
+      implement, we're still using OpenGL immediate mode to render the cylinder.
+      We also added display lists, but they didn't help much.
+      Moving to an even more modern shader/buffer model would probably improve the 12ms display time.
     </p>
 
-    <!-- TODO Was your choice of target machine sound? -->
+    <h3>Choice of target machine</h3>
     <p>
-    Our choice of target machine was limited, so if we had used a better computer, we could have had faster render times.
+      Our choice of target machine was limited, so if we had used a better computer, than say, a 2 year old laptop, we could've had faster render times.
+      But, we were limited to the computers we owned, since we need physical access to plug in the HMD, and both of us only had laptops.
+      Also, we found out that apparently our test video at 4098x4098 just barely exceeded the maximum supported GPU accelerated video decoding size of 4032x4032.
+      We tried to rectify this by editing the video, but it crashed every computer we had access too.
+      Apparently the video was also bigger than the H.264 codec technically allowed.
     </p>
 
-    <!-- TODO References -->
+    <h3>References</h3>
+    <ul>
+      <li>
+        <a href="http://www.gdcvault.com/play/1021771/Advanced-VR" target="_blank">
+          Advanced VR Rendering
+        </a> (for general understanding)
+      </li>
+      <li>
+        <a href="https://www.oculus.com/blog/the-latent-power-of-prediction/" target="_blank">
+          Oculus Blog: The Latent Power of Prediction
+        </a>
+      </li>
+      <li>
+        <a href="https://developer.nvidia.com/system/files/akamai/gamedev/docs/Fast_Texture_Transfers.pdf" target="_blank">
+          Nvidia: Fast texture transfers
+        </a>
+      </li>
+    </ul>
 
-    <!-- TODO Work by each student -->
+    <h3>Work by each student</h3>
+    Equal work was performed by both project members.
   </section>
 </div>
 
