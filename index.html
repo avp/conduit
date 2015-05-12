@@ -386,7 +386,7 @@ while (videoFrameAvailable()) {
     <p>
       We ran our demo on a Samsung Chronos 7 laptop with a Nvidia GT 630M on Ubuntu 14.10.
       We ran it for 2 minutes while wearing it and looking around.
-      It outputs averages of all the statistics we gave hee.
+      It outputs averages of all the statistics we gave here.
     </p>
 
     <p>
@@ -400,6 +400,14 @@ while (videoFrameAvailable()) {
       When viewing the video through the Oculus, we did not notice the blurring that was done outside of the focused region of the frame.
       Our blur factor for the final test was only 3, which wasn’t noticeable on the edges of our vision.
       When we turn quickly, the screen never goes noticeably black on the edges where it’s been cropped.
+    </p>
+
+    <p>
+      The bandwidth requirement for streaming 3D 4K video was a minimum of 18 Mbps for H.264 encoded video.
+      With our view optimization, we cut that down to about 1.8 Mbps.
+      Cropping removes 50% of the frame.
+      We blur the image by a factor of 9, and we only keep a 50&deg; by 50&deg; window in the middle of the frame (only 3% of the overall frame).
+      So, our view optimization leads to 10% bandwidth usage.
     </p>
 
     <p>
