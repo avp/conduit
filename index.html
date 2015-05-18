@@ -69,13 +69,14 @@
     </p>
 
     <p>
-      This requires a very high amount of bandwidth &mdash; at least 25 Mbps,
+      This requires a very high amount of bandwidth &mdash; at least 25 Mbps (for 2D 4K at half the size),
       <a href="https://help.netflix.com/en/node/13444">according to Netflix</a>.
       However, <a href="http://www.scribd.com/doc/259862003/State-of-the-Internet-Report-Q4-2014">according to Akamai</a>,
       the average American internet speed is about 11 Mbps.
       In addition, while 4G internet can get almost to the 4K streaming point,
       <a href="https://bgr.com/2013/03/11/4g-network-speeds-368339/">at 20 Mbps down</a>,
-      on average it's a lot lower.
+      on average it's a lot lower (typically more like ~11 Mbps).
+      In addition, you'd want a higher bandwidth than you need to provide better stability and account for overhead.
       This effectively prohibits live streaming on mobile VR on all but some of the fastest internet connections in America.
     </p>
 
@@ -96,50 +97,28 @@
       our eyes have significantly higher resolution in the center region, called the fovea.
       Therefore, we downsample the outer regions, which comprise most of the image, saving even more space.
       However, because of this, you could move your head fast enough that it got outside the “view” region of the last streamed frame,
-      and so we introduce multiple techniques to mitigate this by adaptively changing the compression parameters and taking advantage of the GPU to reduce latency.
+      and so we introduce multiple techniques to mitigate this by adaptively changing
+      the compression parameters, adding buffer room, and taking advantage of the GPU to
+      reduce latency.
     </p>
 
-    <!--<h2>Preliminary Results</h2>-->
+    <h2>Scope</h2>
 
-    <!--<p>-->
-      <!--We have a baseline working renderer that can read videos and render them to the Oculus.-->
-      <!--The frames are view optimized, and they account for the rotation of the viewer’s head.-->
-      <!--With our view optimization, we compress images to about 10% of their original size.-->
-    <!--</p>-->
-
-    <!--<p>-->
-      <!--To simulate a client-server setup, we had our optimizer optimize a given frame,-->
-      <!--and then extract the unoptimized image to figure out how much time it would take.-->
-      <!--Optimization is a process that takes the viewer’s head position and the video frame,-->
-      <!--and gives back a smaller data structure that contains the optimized image.-->
-      <!--The optimized image would be sent over a network.-->
-      <!--The client would then extract the image and display it on the HMD.-->
-    <!--</p>-->
-
-    <!--<p>-->
-      <!--Additionally, we’ve made optimizations that, as much as we can measure now,-->
-      <!--reduce the average time per frame from 140ms as measured on a Samsung Chronos 7 with Nvidia GT 630M, to 90 ms.-->
-      <!--We measured motion to update (M2U) latency,-->
-      <!--which is the time from when you move your head to when you see the updated image appear on the HMD.-->
-    <!--</p>-->
-
-    <!--<p>-->
-      <!--When viewing the video through the Oculus, we did not notice the blurring that was done outside of the focused region of the frame.-->
-      <!--Our blur factor for the final test was only 3, which wasn’t noticeable on the edges of our vision.-->
-      <!--When we turn quickly, the screen never goes noticeably black on the edges where it’s been cropped.-->
-    <!--</p>-->
-
-    <!--<p>-->
-      <!--Through the optimizations, our motion to update latency was reduced from 150ms to 75ms.-->
-      <!--This resulted in a frame rate of 50 FPS, or about 19 ms/frame.-->
-      <!--12ms were spent on display, and 7ms were spent loading the texture.-->
-      <!--Video reading and optimization take almost no time, because we hide latency by pipelining those operations.-->
-    <!--</p>-->
+    <p>
+      Fully investigating view optimization would require many weeks of full-time work.
+      In order to scope this to be doable as a class project, we decided to focus on getting the view-optimization
+      to work so that we could see how it looks, and optimizing the graphics as much as we could.
+      The client and server are integrated into one program, and so we simply do
+      <code>decode_frame(optimize_frame(frame))</code>.
+      The Oculus DK2 does not have eye tracking capabilities, so we assume your eyes focus straight ahead at all
+      times relative to the head.
+    </p>
 
     <h2>Technologies</h2>
 
     <p>
-      We used <b>OpenCV</b> to read frames from the H.264-encoded MP4 video file. The library handles video reading and decoding using <b>FFMpeg</b>.
+      We used <b>OpenCV</b> to read frames from the H.264-encoded MP4 video file.
+      The library handles video reading and decoding using <b>FFMpeg</b>.
     </p>
 
     <p>
@@ -151,7 +130,8 @@
     </p>
 
     <p>
-      We also used the <b>Oculus Rift</b> and its SDK. We sent our view-optimized images to the Oculus display where the video could be viewed.
+      We also used an <b>Oculus Rift DK2</b> and its SDK.
+      We sent our view-optimized images to the Oculus display where the video could be viewed.
     </p>
 
     <h2>Optimization</h2>
@@ -208,15 +188,7 @@ while (true) {
   render_frame(decoded_frame, viewer_data);
 }</code></pre>
 
-    <!--<p>-->
-      <!--First, let’s define “frame time” as the time to complete one iteration of this loop.-->
-    <!--</p>-->
-
-    <!--<p>-->
-      <!--We profiled our code, and found that:-->
-    <!--</p>-->
-
-    <!-- TODO Profile results -->
+      <!--Profiling-->
 
     <h3>Optimization 1: Async Video Loading</h3>
 
@@ -234,21 +206,25 @@ while (true) {
 
     <p>
       <!--This cut down our frame time by XXXX-->
-      We also found the video decoding ran much faster than the main loop, so the queue would quickly fill up and stay full.
+      We also found the video decoding ran much faster than the main loop, so the queue would
+      quickly fill up and stay full.
+      It may be worth revisiting (decode multiple frames in parallel) once everything else is optimized.
     </p>
 
     <p>
       As a secondary optimization, we found that our dequeue function waited for a frame to be available.
       This meant that the main loop couldn’t run faster than video frames were decoded,
-      and even if video frames were decoded slightly faster, if the video reader ever hung temporarily, it’d cause a hiccup in the main loop.
+      and even if video frames were decoded slightly faster, if the video reader ever hung temporarily,
+      it’d cause a hiccup in the main loop.
       In VR, it’s particularly important to have a fast main loop,
-      since that’s where the frame is updated to reflect head-tracking, and high-latency and low framerates on head-tracking cause motion sickness.
+      since that’s where the frame is updated to reflect head-tracking,
+      and high-latency and low framerates on head-tracking cause motion sickness.
       We then changed dequeue to just return <code>NULL</code> immediately if no frame was available,
       and in that case simply skipped updating the frame in the main loop.
       <!--This cut down our frame time by XXX.-->
     </p>
 
-    <h3>Optimization 2: Simplifying the Optimizer</h3>
+    <h3>Optimization 2: Simplifying the View-optimizer</h3>
 
     <p>
     We implemented view optimization and measured results from that.
@@ -256,7 +232,8 @@ while (true) {
 
     <p>
       <b>First Attempt:</b>
-      First, we cropped the panoramic video frame that was read to 180&deg; in order to exclude regions that would be too far for the user to turn their head to see.
+      First, we cropped the panoramic video frame that was read to 180&deg;
+      in order to exclude regions that would be too far for the user to turn their head to see.
       Then, taking a yaw and a pitch, we compressed the image.
       To do this, we divided the image up horizontally: left, middle (the inner 20&deg;), and right.
       We scaled down the left and right sides by a factor of 5.
@@ -280,10 +257,10 @@ while (true) {
 
     <p>
       <b>Solution:</b>
-      Our initial attempt attempted to save space by splitting the image into exclusive regions, and operating on them individually.
+      Our initial attempt tried to save space by splitting the image into exclusive regions, and operating on them individually.
       To restore, we would then scale each piece back up and concatenate them, first reassembling the vertical column, then reassembling the horizontal pieces.
       This was far too complicated, and error-prone, resulting in numerous bugs and edge cases.
-      In addition, the multiple concatenations each copied every single pixel, meaning many pixels were copied multiple times, which is inefficient
+      In addition, the multiple concatenations each copied every single pixel, meaning many pixels were copied multiple times, which is inefficient.
     </p>
 
     <p>
@@ -291,8 +268,8 @@ while (true) {
       and then take the entire image and scale it down.
       Then, to reconstruct it, we re-expand the cropped image to the original size,
       and paint the focused sub-image back in the center.
-      While this does create redundant information for the center piece,
-      the simpler approach overall reduced optimization time from ~26ms to ~18ms.
+      While this does mean we now have redundant information for the center piece,
+      the simpler approach overall reduced view-optimization time from ~26ms to ~18ms.
     </p>
 
     <h3>Optimization 3: Pixel Buffer Objects</h3>
@@ -301,49 +278,44 @@ while (true) {
       We next address the issue of <code>copy_frame_to_texture</code>,
       which copies our decoded frame to the OpenGL texture, which is stored on the GPU.
       At first, we thought the primary issue was being bandwidth bound,
-      but we profiled with the Nvidia X Server Info tool, and found that GPU bandwidth wasn’t even near being fully used.
+      but we profiled with the NVIDIA X Server Info tool, and found that GPU bandwidth wasn’t even near being fully
+      used.
     </p>
 
     <p>
-      We instead found the problem to be waiting. We initially used <code>glTexImage2D</code>,
-      which copies the texture to the GPU, every single time we got a new video frame.
-      However, it turns out that <code>glTexImage2D</code> is blocking,
-      and waits for the GPU to be available, and in particular done using the texture.
+      We found the problem to be using <code>glTexImage2D</code> to copy
+      the texture to the GPU every single time we got a new video frame.
+
+      It turns out that <code>glTexImage2D</code> is blocking,
+      i.e. it waits for the GPU to be available, and in particular done using the texture, before copying.
       In other words, it wastes a lot of time waiting around.
     <p>
 
     <p>
       We found a better solution to be using pixel-buffer objects (PBO).
-      These allow you to copy your image data into a “pixel buffer”, and then tell the GPU to copy it into the texture, but it runs asynchronously.
+      These allow you to copy your image data into a “pixel buffer”, and then tell the GPU to copy it into the texture,
+      but it runs asynchronously.
       This is similar to asynchronous message passing from class.
       Using pixel-buffer objects reduced the time to copy textures from ~20ms to ~2ms,
       and since we do it once for each eye, it’s about a ~40ms win on total frame time
     <p>
 
-    <h3>Optimization 4: Pipelining Frame Optimization</h3>
+    <h3>Optimization 4: Pipelining Frame View-Optimization</h3>
 
     <p>
-      The framerate was tied to the amount of time to optimize a frame.
-      This was bad, because it resulted in a substantially lower frame rate for the head tracking, which is what makes people sick.
-      You move your head, and then see your vision update after 100ms.
-      Instead, we decided that even if the video frame takes a while,
-      there’s no reason we can’t keep updating the scene with your <code>viewer_data</code>
-      (notice <code>viewer_data</code>, containing your head position and orientation,
-      is an argument to render_frame--it tells the code where the camera is)
+      We found the next bottleneck to be frame optimization, taking over 30ms.
+      Taking a hint from optimization 1, we made this asynchronous as well.
+      This didn't affect the total time a frame spent in the pipeline, but reduced
+      motion-to-photon latency, making the experience more comfortable.
     </p>
 
     <p>
-      We decoupled optimization using a producer-consumer model with a queue.
-      The main render thread is now only responsible for rendering the frame.
-      Another thread keeps reading and optimizing the video, and it puts each finished frame into a queue.
-      The main thread updates its video frame out of the queue if one is available.
-      In addition, rendering the scene and decoding the frame are independent parts, so we improve performance by running them in parallel.
-      Together, these all make a better user experience.
-    </p>
-
-    <p>
-      Note that the second thread keeps a copy of viewer data in order to perform the view optimization,
-      and the main thread updates it whenever it receives new viewer data. Now, it’s more like:
+      A slight issue is that view-optimization requires sensor data, but the Oculus SDK sensor-reading functions
+      are not thread-safe and must be executed on the main thread. Therefore, we copy them over periodically in the
+      main thread, along with a timestamp of the time the sensor data was generated. We use a simple mutex for
+      synchronization since these are very small constant-sized pieces of data that aren't accessed often.
+      If we had more time, we would also optimize placement of updating the viewer data on the main thread, and
+      possibly due it multiple times per loop.
     </p>
 
 <pre><code>// T1
@@ -354,17 +326,25 @@ ViewerData viewerData;
 while (true) {
   if (frameQueue.hasNewFrame())
     frame = frameQueue.dequeue();
-  viewerData = get_viewer_data_from_hmd();
+    viewer_data = get_viewer_data_from_hmd();
+    T2.mutex.lock();
+    T2.viewer_data = viewer_data;
+    T2.mutex.unlock();
 
-  render_frame(optimized_frame, viewer_data);
+    render_frame(optimized_frame, viewer_data);
 }
 
 // T2
-ViewerData viewerData;
+ViewerData viewer_data;
+Mutex mutex;
 while (videoFrameAvailable()) {
-  frame = readFrame();
-  frame = deoptimizeFrame(optimizeFrame(frame, viewerData));
-  frameQueue.enqueue(frame);
+    mutex.lock();
+    local_viewer_data = viewer_data;
+    mutex.unlock();
+
+    frame = readFrame();
+    frame = decode_frame(optimize_frame(frame, local_viewer_data));
+    frameQueue.enqueue(frame);
 }</code></pre>
 
     <h3>Optimization 5: Pose Prediction</h3>
@@ -383,17 +363,22 @@ while (videoFrameAvailable()) {
       for where your head will be when you see the frame.
       Note that Oculus clamps predictions to 100ms in the future,
       so we have trouble with spikes, but fortunately we’re about 70ms M2U on average.
+      It's harder to measure prediction, although we could compare the position you arrived at with the position the
+      view-optimization was for, but it made a noticeable difference.
+      Keep in mind that it's much more ok to have a higher M2U than motion-to-photons, since the focus window is
+      padded to make it larger than it needs to be.
     </p>
 
     <h3>Other miscellaneous optimizations</h3>
-    We performed several other optimizations such as optimizing for the API by removing unnecessary calls, using display lists, and etc, too small but numerous to list entirely here.
+    We performed several other optimizations such as optimizing for the API by removing unnecessary calls,
+    using display lists, and etc, too small but numerous to list entirely here.
 
     <h2>Results</h2>
 
     <h3>Experimental Setup</h3>
 
     <p>
-      We ran our demo on a Samsung Chronos 7 laptop with a Nvidia GT 630M on Ubuntu 14.10.
+      We ran our demo on a Samsung Chronos 7 laptop with a NVIDIA GeForce GT 630M running Ubuntu 14.10.
       We ran it for 2 minutes while wearing it and looking around.
       We used a <a href="http://photocreations.ca/3D/fountain-3D-4k.mp4" target="_blank">this video</a> from <a href="http://photocreations.ca/3D/" target="_blank">Photocreations</a>.
       It outputs averages of all the statistics we gave here.
@@ -414,12 +399,16 @@ while (videoFrameAvailable()) {
     <p>
       We found that blur was not particularly noticeable at <b>blur factor</b> (the factor by which we rescale each dimension of the image) 3, although you could "notice" it by toggling blur on and off, you didn't really care, and also, not having everything be in focus is more realistic.
 
-
       It became more noticeable at 4 and 5. Although, this is just qualitative experience for us, other people may be different.
 
-      To test tracking, we turned blur factor up to 40 to make it really obvious where the focus window is, and tracking was quite responsive. Oculus's prediction helped quite a lot with responsiveness, and also, since the focus and crop regions are larger than necessary, we don't even need the 20 ms motion-to-photons latency.
+      To test tracking, we turned blur factor up to 40 to make it really obvious where the focus window is, and tracking
+       was quite responsive. Oculus's prediction helped quite a lot with responsiveness, and also, since the focus
+      and crop regions are larger than necessary, and head-tracking updates are decoupled, we found motion-to-update
+      could safely exceed the recommended 20ms for motion-to-photons.
 
-      Making the focus window larger helped a lot both when moving and stationary. Since it turns out the focus window is only a few percentage points of the entire video, this didn't even cost much.
+      Making the focus window larger helped a lot both when moving and stationary.
+      Since it turns out the focus window is only a few percentage points of the entire video,
+      this didn't even cost much.
     </p>
 
     <h3>Quantitative Results</h3>
@@ -429,13 +418,15 @@ while (videoFrameAvailable()) {
 
       Cropping removes 50% of the frame.
       We shrink the image by a factor of 3 in each dimension, ke
-      We blur the image by a factor of 9, and we only keep a 50&deg; by 50&deg; window in the middle of the frame (only 3% of the overall frame).
+      We blur the image by a factor of 9, and we only keep a 50&deg; by 50&deg;
+      window in the middle of the frame (only 3% of the overall frame).
 
       Assuming video compression is linear, we cut down bandwidth to 1.8 Mbps, making it much more accessible.
     </p>
 
     <p>
-      We got a motion-to-update latency of 75ms. This was comprised of about 50ms for view-optimization, and 25ms spent waiting in the buffer and miscellaneous overhead.
+      We got a motion-to-update latency of 75ms. This was comprised of about 50ms for view-optimization,
+      and 25ms spent waiting in the buffer and miscellaneous overhead.
 
       Also, our optimizations brought the time per frame down from 150ms/frame (6 FPS)  to about 19ms/frame (~50 FPS).
       12ms were spent on display, and 7ms were spent loading the texture.
@@ -490,6 +481,25 @@ while (videoFrameAvailable()) {
       Apparently the video was also bigger than the H.264 codec technically allowed.
     </p>
 
+    <h3>Next steps</h3>
+    <p>
+      This is a list of some of the things we'd do to continue the project if we had more time:
+    </p>
+    <ul>
+      <li>Compile OpenCV with CUDA and OpenGL support, instantly accelerating optimization</li>
+      <li>Try out the CUDA video decoder</li>
+      <li>Profile the entire project with NVIDIA Nsight</li>
+      <li>Make the optimizer multi-threaded (can optimize multiple frames at once)</li>
+      <li>Investigate a performance leak possibly related to the DK2 where displaying the image would take up to
+        40ms longer sometimes (but was fixed by rebooting)</li>
+      <li>Try using a slightly smaller 4000x4000 video. The graphics card we used said its fixed-function
+        decoder was maximum size 4032x4032, slightly smaller than the video. Unfortunately, attempting to resize
+        the video crashed most video editors we tried, and the ones that didn't simply refused to create the
+        resolution (Adobe Premiere, Final Cut Pro, running on a friend's much higher-end Macbook).</li>
+      <li>Asynchronous timewarp</li>
+      <li>Actual server-client setup</li>
+    </ul>
+
     <h3>References</h3>
     <ul>
       <li>
@@ -504,13 +514,25 @@ while (videoFrameAvailable()) {
       </li>
       <li>
         <a href="https://developer.nvidia.com/system/files/akamai/gamedev/docs/Fast_Texture_Transfers.pdf" target="_blank">
-          Nvidia: Fast texture transfers
+          NVIDIA: Fast texture transfers
         </a>
       </li>
     </ul>
 
-    <h3>Work by each student</h3>
-    Equal work was performed by both project members.
+    <h3>Context</h3>
+
+    <p>
+    Conduit was created as a
+    <a href="http://15418.courses.cs.cmu.edu/spring2015/article/10" target="_blank">final project</a> in
+    <a href="http://15418.courses.cs.cmu.edu/spring2015/" target="_blank">
+      15-418: Parallel Computer Architecture and Programming</a>,
+    taught by <a href="https://www.cs.cmu.edu/~kayvonf/" target="_blank">
+    Kayvon Fatahalian</a>
+    at Carnegie Mellon University. <br /> <br />
+
+    We thank Professor Kayvon and the TAs for their advice along the way!
+    </p>
+
   </section>
 </div>
 
